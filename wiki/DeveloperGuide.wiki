@@ -1,0 +1,31 @@
+#summary Developer Guide
+#labels Phase-Implementation
+
+= Introduction =
+
+This page details the preferred way to work on Chromium WM.
+
+<wiki:toc max_depth="2" />
+
+= Prerequisites =
+
+  * Committers will need an SVN account.
+
+  * [http://dev.chromium.org/developers/how-tos/install-depot-tools depot_tools] is required on every platform, make sure it's correctly in your PATH.
+
+= Initial checkout =
+
+First, have gclient create its configuration file.
+
+{{{
+  gclient config https://chromium-wm.googlecode.com/svn/trunk/src
+}}}
+
+Now do a sync to create the src/ folder and get the source code.
+
+{{{
+  # First time only you must use '--nohooks' to pull only source code, then install dependencies.
+  gclient sync --nohooks
+  src/build/install-build-deps.sh
+  gclient sync
+}}}
