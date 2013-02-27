@@ -1,0 +1,274 @@
+vars = {
+  'chromium_svn': 'http://src.chromium.org/svn/trunk/src',
+  'chromium_rev': '184577'
+}
+
+deps = {
+  'chromium_deps':
+    File(Var('chromium_svn')+'/DEPS@'+Var('chromium_rev')),
+
+  'src/apps':
+    Var('chromium_svn')+'/apps@'+Var('chromium_rev'),
+  'src/ash':
+    Var('chromium_svn')+'/ash@'+Var('chromium_rev'),
+  'src/base':
+    Var('chromium_svn')+'/base@'+Var('chromium_rev'),
+  'src/breakpad':
+    Var('chromium_svn')+'/breakpad@'+Var('chromium_rev'),
+  'src/build/android':
+    Var('chromium_svn')+'/build/android@'+Var('chromium_rev'),
+  'src/build/internal':
+    Var('chromium_svn')+'/build/internal@'+Var('chromium_rev'),
+  'src/build/ios':
+    Var('chromium_svn')+'/build/ios@'+Var('chromium_rev'),
+  'src/build/linux':
+    Var('chromium_svn')+'/build/linux@'+Var('chromium_rev'),
+  'src/build/temp_gyp':
+    Var('chromium_svn')+'/build/temp_gyp@'+Var('chromium_rev'),
+  'src/build/util':
+    Var('chromium_svn')+'/build/util@'+Var('chromium_rev'),
+  'src/cc':
+    Var('chromium_svn')+'/cc@'+Var('chromium_rev'),
+  'src/chrome':
+    Var('chromium_svn')+'/chrome@'+Var('chromium_rev'),
+  'src/chromeos':
+    Var('chromium_svn')+'/chromeos@'+Var('chromium_rev'),
+  'src/cloud_print':
+    Var('chromium_svn')+'/cloud_print@'+Var('chromium_rev'),
+  'src/components':
+    Var('chromium_svn')+'/components@'+Var('chromium_rev'),
+  'src/content':
+    Var('chromium_svn')+'/content@'+Var('chromium_rev'),
+  'src/courgette':
+    Var('chromium_svn')+'/courgette@'+Var('chromium_rev'),
+  'src/crypto':
+    Var('chromium_svn')+'/crypto@'+Var('chromium_rev'),
+  'src/dbus':
+    Var('chromium_svn')+'/dbus@'+Var('chromium_rev'),
+  'src/device':
+    Var('chromium_svn')+'/device@'+Var('chromium_rev'),
+  'src/extensions':
+    Var('chromium_svn')+'/extensions@'+Var('chromium_rev'),
+  'src/google_apis':
+    Var('chromium_svn')+'/google_apis@' + Var('chromium_rev'),
+  'src/gpu':
+    Var('chromium_svn')+'/gpu@'+Var('chromium_rev'),
+  'src/ipc':
+    Var('chromium_svn')+'/ipc@'+Var('chromium_rev'),
+  'src/jingle':
+    Var('chromium_svn')+'/jingle@'+Var('chromium_rev'),
+  'src/media':
+    Var('chromium_svn')+'/media@'+Var('chromium_rev'),
+  'src/net':
+    Var('chromium_svn')+'/net@'+Var('chromium_rev'),
+  'src/ppapi':
+    Var('chromium_svn')+'/ppapi@'+Var('chromium_rev'),
+  'src/printing':
+    Var('chromium_svn')+'/printing@'+Var('chromium_rev'),
+  'src/remoting':
+    Var('chromium_svn')+'/remoting@'+Var('chromium_rev'),
+  'src/sandbox':
+    Var('chromium_svn')+'/sandbox@'+Var('chromium_rev'),
+  'src/sdch':
+    Var('chromium_svn')+'/sdch@'+Var('chromium_rev'),
+  'src/skia':
+    Var('chromium_svn')+'/skia@'+Var('chromium_rev'),
+  'src/sql':
+    Var('chromium_svn')+'/sql@'+Var('chromium_rev'),
+  'src/sync':
+    Var('chromium_svn')+'/sync@'+Var('chromium_rev'),
+  'src/testing':
+    Var('chromium_svn')+'/testing@'+Var('chromium_rev'),
+  'src/third_party':
+    Var('chromium_svn')+'/third_party@'+Var('chromium_rev'),
+  'src/tools':
+    Var('chromium_svn')+'/tools@'+Var('chromium_rev'),
+  'src/ui':
+    Var('chromium_svn')+'/ui@'+Var('chromium_rev'),
+  'src/webkit':
+    Var('chromium_svn')+'/webkit@'+Var('chromium_rev'),
+  'src/win8':
+    Var('chromium_svn')+'/win8@'+Var('chromium_rev'),
+
+  'src/breakpad/src':
+    From('chromium_deps', 'src/breakpad/src'),
+  'src/googleurl':
+    From('chromium_deps', 'src/googleurl'),
+  'src/native_client':
+    From('chromium_deps', 'src/native_client'),
+  'src/sandbox/linux/seccomp-legacy':
+    From('chromium_deps', 'src/sandbox/linux/seccomp-legacy'),
+  'src/sdch/open-vcdiff':
+    From('chromium_deps', 'src/sdch/open-vcdiff'),
+  'src/testing/gmock':
+    From('chromium_deps', 'src/testing/gmock'),
+  'src/testing/gtest':
+    From('chromium_deps', 'src/testing/gtest'),
+  'src/third_party/WebKit/Source':
+    From('chromium_deps', 'src/third_party/WebKit/Source'),
+  'src/third_party/WebKit/Tools/DumpRenderTree':
+    From('chromium_deps', 'src/third_party/WebKit/Tools/DumpRenderTree'),
+  'src/third_party/WebKit/Tools/TestWebKitAPI':
+    From('chromium_deps', 'src/third_party/WebKit/Tools/TestWebKitAPI'),
+  'src/third_party/WebKit':
+    From('chromium_deps', 'src/third_party/WebKit'),
+  'src/third_party/angle':
+    From('chromium_deps', 'src/third_party/angle'),
+  'src/third_party/cacheinvalidation/src':
+    From('chromium_deps', 'src/third_party/cacheinvalidation/src'),
+  'src/third_party/ffmpeg':
+    From('chromium_deps', 'src/third_party/ffmpeg'),
+  'src/third_party/flac':
+    From('chromium_deps', 'src/third_party/flac'),
+  'src/third_party/hunspell':
+    From('chromium_deps', 'src/third_party/hunspell'),
+  'src/third_party/hunspell_dictionaries':
+    From('chromium_deps', 'src/third_party/hunspell_dictionaries'),
+  'src/third_party/icu':
+    From('chromium_deps', 'src/third_party/icu'),
+  'src/third_party/jsoncpp/source/include':
+    From('chromium_deps', 'src/third_party/jsoncpp/source/include'),
+  'src/third_party/jsoncpp/source/src/lib_json':
+    From('chromium_deps', 'src/third_party/jsoncpp/source/src/lib_json'),
+  'src/third_party/leveldatabase/src':
+    From('chromium_deps', 'src/third_party/leveldatabase/src'),
+  'src/third_party/libexif/sources':
+    From('chromium_deps', 'src/third_party/libexif/sources'),
+  'src/third_party/libjingle/source':
+    From('chromium_deps', 'src/third_party/libjingle/source'),
+  'src/third_party/libjpeg_turbo':
+    From('chromium_deps', 'src/third_party/libjpeg_turbo'),
+  'src/third_party/libphonenumber/src/phonenumbers':
+    From('chromium_deps', 'src/third_party/libphonenumber/src/phonenumbers'),
+  'src/third_party/libphonenumber/src/resources':
+    From('chromium_deps', 'src/third_party/libphonenumber/src/resources'),
+  'src/third_party/libphonenumber/src/test':
+    From('chromium_deps', 'src/third_party/libphonenumber/src/test'),
+  'src/third_party/libsrtp':
+    From('chromium_deps', 'src/third_party/libsrtp'),
+  'src/third_party/libvpx':
+    From('chromium_deps', 'src/third_party/libvpx'),
+  'src/third_party/libyuv':
+    From('chromium_deps', 'src/third_party/libyuv'),
+  'src/third_party/opus/src':
+    From('chromium_deps', 'src/third_party/opus/src'),
+  'src/third_party/ots':
+    From('chromium_deps', 'src/third_party/ots'),
+  'src/third_party/pymox/src':
+    From('chromium_deps', 'src/third_party/pymox/src'),
+  'src/third_party/safe_browsing/testing':
+    From('chromium_deps', 'src/third_party/safe_browsing/testing'),
+  'src/third_party/sfntly/cpp/src':
+    From('chromium_deps', 'src/third_party/sfntly/cpp/src'),
+  'src/third_party/skia/gyp':
+    From('chromium_deps', 'src/third_party/skia/gyp'),
+  'src/third_party/skia/include':
+    From('chromium_deps', 'src/third_party/skia/include'),
+  'src/third_party/skia/src':
+    From('chromium_deps', 'src/third_party/skia/src'),
+  'src/third_party/smhasher/src':
+    From('chromium_deps', 'src/third_party/smhasher/src'),
+  'src/third_party/snappy/src':
+    From('chromium_deps', 'src/third_party/snappy/src'),
+  'src/third_party/speex':
+    From('chromium_deps', 'src/third_party/speex'),
+  'src/third_party/trace-viewer':
+    From('chromium_deps', 'src/third_party/trace-viewer'),
+  'src/third_party/undoview':
+    From('chromium_deps', 'src/third_party/undoview'),
+  'src/third_party/v8-i18n':
+    From('chromium_deps', 'src/third_party/v8-i18n'),
+  'src/third_party/webrtc':
+    From('chromium_deps', 'src/third_party/webrtc'),
+  'src/third_party/yasm/source/patched-yasm':
+    From('chromium_deps', 'src/third_party/yasm/source/patched-yasm'),
+  'src/tools/deps2git':
+    From('chromium_deps', 'src/tools/deps2git'),
+  'src/tools/grit':
+    From('chromium_deps', 'src/tools/grit'),
+  'src/tools/gyp':
+    From('chromium_deps', 'src/tools/gyp'),
+  'src/tools/swarm_client':
+    From('chromium_deps', 'src/tools/swarm_client'),
+  'src/v8':
+    From('chromium_deps', 'src/v8'),
+}
+
+deps_os = {
+  'unix': {
+    'src/third_party/WebKit/Tools/gdb':
+      From('chromium_deps', 'src/third_party/WebKit/Tools/gdb'),
+    'src/third_party/cros_dbus_cplusplus/source':
+      From('chromium_deps', 'src/third_party/cros_dbus_cplusplus/source'),
+    'src/third_party/cros_system_api':
+      From('chromium_deps', 'src/third_party/cros_system_api'),
+    'src/third_party/freetype2/src':
+      From('chromium_deps', 'src/third_party/freetype2/src'),
+    'src/third_party/gold':
+      From('chromium_deps', 'src/third_party/gold'),
+    'src/third_party/libmtp':
+      From('chromium_deps', 'src/third_party/libmtp'),
+    'src/third_party/lss':
+      From('chromium_deps', 'src/third_party/lss'),
+    'src/third_party/mtpd/source':
+      From('chromium_deps', 'src/third_party/mtpd/source'),
+    'src/third_party/openssl':
+      From('chromium_deps', 'src/third_party/openssl'),
+    'src/third_party/swig/linux':
+      From('chromium_deps', 'src/third_party/swig/linux'),
+    'src/third_party/xdg-utils':
+      From('chromium_deps', 'src/third_party/xdg-utils'),
+  },
+}
+
+include_rules = [
+  '+base',
+  '+build',
+  '+googleurl',
+  '+ipc',
+  '+library_loaders',
+  '+testing',
+  '+third_party/icu/public',
+]
+
+skip_child_includes = [
+  'breakpad',
+  'chrome_frame',
+  'delegate_execute',
+  'googleurl',
+  'metro_driver',
+  'native_client_sdk',
+  'o3d',
+  'pdf',
+  'sdch',
+  'skia',
+  'testing',
+  'third_party',
+  'v8',
+  'win8',
+]
+
+hooks = [
+  {
+    'pattern': '.',
+    'action': [
+        'python', 'src/build/download_nacl_toolchains.py',
+         '--no-arm-trusted',
+         '--keep',
+    ],
+  },
+  {
+    'pattern': '.',
+    'action': ['python', 'src/build/util/lastchange.py',
+               '-o', 'src/build/util/LASTCHANGE'],
+  },
+  {
+    'pattern': '.',
+    'action': ['python', 'src/build/gyp_chromium',
+               '-Duse_ash=1', '-Duse_wm=1'],
+  },
+  {
+    'pattern': '.',
+    'action': ['python', 'src/build/landmines.py'],
+  },
+]
