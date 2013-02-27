@@ -10,12 +10,12 @@
 #include "wm/foreign_window_client_view.h"
 #include "wm/host/foreign_window_host.h"
 
+DECLARE_WINDOW_PROPERTY_TYPE(wm::ForeignWindow*)
+DEFINE_LOCAL_WINDOW_PROPERTY_KEY(wm::ForeignWindow*, kForeignWindowKey, NULL);
+
 namespace wm {
 
 namespace {
-
-DECLARE_WINDOW_PROPERTY_TYPE(ForeignWindow*)
-DEFINE_LOCAL_WINDOW_PROPERTY_KEY(ForeignWindow*, kForeignWindowKey, NULL);
 
 ForeignWindowHost* CreateHost(ForeignWindow* foreign_window,
                               gfx::PluginWindowHandle window_handle) {
