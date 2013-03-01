@@ -41,7 +41,7 @@ This assumes you are building on Linux, and have a machine set up to build chrom
 This builds Chromium with native X11 window manager support enabled.
 
 {{{
-  gclient runhooks
+  gclient runhooks  # This is needed if you change any .gyp(i) files.
   ninja -C out/Debug chrome
   # The resulting binary is found in out/Debug
 }}}
@@ -51,7 +51,7 @@ This builds Chromium with native X11 window manager support enabled.
 This builds a test shell that demonstrates the various window manager functionality for debugging.
 
 {{{
-  gclient runhooks
+  gclient runhooks  # This is needed if you change any .gyp(i) files.
   ninja -C out/Debug wm_shell
   # The resulting binary is found in out/Debug
 }}}
