@@ -32,6 +32,34 @@ Now do a sync to create the src/ folder and get the source code.
   gclient sync
 }}}
 
+= Building =
+
+This assumes you have a machine set up to build chromium already. If not, then see [https://code.google.com/p/chromium/wiki/LinuxBuildInstructions First Time Build Bootstrap] in the Chromium Wiki.
+
+== Building Chromium ==
+
+This builds Chromium with native X11 window manager support enabled.
+
+{{{
+  gclient runhooks
+  ninja -C out/Debug chrome
+  # The resulting binary is found in out/Debug
+}}}
+
+== Building wm_shell ==
+
+This builds a test shell that demonstrates the various window manager functionality for debugging.
+
+{{{
+  gclient runhooks
+  ninja -C out/Debug wm_shell
+  # The resulting binary is found in out/Debug
+}}}
+
+== Further reading ==
+
+Building this project is essentially the same as building the Chromium project, so more details can be found in [https://code.google.com/p/chromium/wiki/LinuxBuildInstructions the Chromium wiki].
+
 = Linking errors =
 
 If you build with a component build, you will need to apply https://codereview.chromium.org/12377013/ locally in your tree after doing {{{gclient sync}}} until that CL lands in chromium.
