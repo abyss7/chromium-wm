@@ -21,6 +21,20 @@ First, have gclient create its configuration file.
   gclient config https://chromium-wm.googlecode.com/svn/trunk/src
 }}}
 
+Optional: Edit the {{{.gclient}}} file that was created, and add lines to exclude unneeded tests in order to make sync faster, as described in [http://dev.chromium.org/developers/how-tos/get-the-code#TOC-Reducing-the-size-of-your-checkout Reducing the size of your checkout]:
+
+{{{
+"custom_deps": {      
+    "src/third_party/WebKit/LayoutTests": None,
+    "src/content/test/data/layout_tests/LayoutTests": None,
+    "src/chrome/tools/test/reference_build/chrome_win": None,
+    "src/chrome_frame/tools/test/reference_build/chrome_win": None,
+    "src/chrome/tools/test/reference_build/chrome_linux": None,
+    "src/chrome/tools/test/reference_build/chrome_mac": None,
+    "src/third_party/hunspell_dictionaries": None,
+  },
+}}}
+
 Now do a sync to create the src/ folder and get the source code.
 
 {{{
@@ -29,3 +43,7 @@ Now do a sync to create the src/ folder and get the source code.
   src/build/install-build-deps.sh
   gclient sync
 }}}
+
+= Linking errors =
+
+If you build with a component build, you will need to apply https://codereview.chromium.org/12377013/ locally in your tree after doing {{{gclient sync}}} until that CL lands in chromium.
