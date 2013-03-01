@@ -34,7 +34,7 @@ Now do a sync to create the src/ folder and get the source code.
 
 = Building =
 
-This assumes you are building on Linux, and have a machine set up to build chromium already. If not, then see [https://code.google.com/p/chromium/wiki/LinuxBuildInstructions First Time Build Bootstrap] in the Chromium Wiki.
+This assumes you are building on Linux, and have a machine set up to build chromium already. If not, then see [https://code.google.com/p/chromium/wiki/LinuxBuildInstructionsPrerequisites Prerequisites] and [https://code.google.com/p/chromium/wiki/LinuxBuildInstructions First Time Build Bootstrap] in the Chromium Wiki.
 
 == Building Chromium ==
 
