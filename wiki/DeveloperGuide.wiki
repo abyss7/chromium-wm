@@ -56,6 +56,16 @@ This builds a test shell that demonstrates the various window manager functional
   # The resulting binary is found in out/Debug
 }}}
 
+== Building wm_unittests ==
+
+This builds all window manager unit tests.
+
+{{{
+  gclient runhooks  # This is needed if you change any .gyp(i) files.
+  ninja -C out/Debug wm_unittests
+  # The resulting binary is found in out/Debug
+}}}
+
 == Further reading ==
 
 Building this project is essentially the same as building the Chromium project, so more details can be found in [https://code.google.com/p/chromium/wiki/LinuxBuildInstructions the Chromium wiki].
