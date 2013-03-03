@@ -38,7 +38,7 @@ This assumes you are building on Linux, and have a machine set up to build chrom
 
 === Using clang ===
 
-If you want to use clang as your compiler, then run {{{./src/tools/clang/scripts/update.sh}}} to fetch the required pieces for it, and add {{{clang=1}}} to your {{{GYP_DEFINES}}} environment variable when running {{{gclient runhooks}}} as described in [https://code.google.com/p/chromium/wiki/Clang the Chromium clang instructions].
+If you want to use clang as your compiler, then run {{{./src/tools/clang/scripts/update.sh}}} to fetch the required pieces for it, and add {{{clang=1}}} to your {{{GYP_DEFINES}}} environment variable when running {{{gclient sync}}} or {{{gclient runhooks}}} as described in [https://code.google.com/p/chromium/wiki/Clang the Chromium clang instructions].
 
 {{{
   ./src/tools/clang/scripts/update.sh
