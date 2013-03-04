@@ -45,16 +45,6 @@ If you want to use clang as your compiler, then run {{{./src/tools/clang/scripts
   export GYP_DEFINES="clang=1"
 }}}
 
-== Building Chromium ==
-
-This builds Chromium with native X11 window manager support enabled.
-
-{{{
-  gclient runhooks  # This is needed if you change any .gyp(i) files.
-  ninja -C out/Debug chrome
-  # The resulting binary is found in out/Debug
-}}}
-
 == Building wm_shell ==
 
 This builds a test shell that demonstrates the various window manager functionality for debugging.
