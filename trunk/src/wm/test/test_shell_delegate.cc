@@ -6,6 +6,7 @@
 
 #include "ash/caps_lock_delegate_stub.h"
 #include "ash/test/test_launcher_delegate.h"
+#include "ash/test/test_session_state_delegate.h"
 #include "content/public/test/test_browser_context.h"
 #include "wm/host/root_window_host_factory.h"
 
@@ -14,36 +15,26 @@ namespace test {
 
 TestShellDelegate::TestShellDelegate()
     : screen_magnifier_enabled_(false),
-      screen_magnifier_type_(ash::kDefaultMagnifierType) {
+      screen_magnifier_type_(ash::kDefaultMagnifierType),
+      test_session_state_delegate_(NULL) {
 }
 
 TestShellDelegate::~TestShellDelegate() {
-}
-
-bool TestShellDelegate::IsUserLoggedIn() const {
-  return true;
-}
-
-bool TestShellDelegate::IsSessionStarted() const {
-  return true;
 }
 
 bool TestShellDelegate::IsFirstRunAfterBoot() const {
   return false;
 }
 
-bool TestShellDelegate::CanLockScreen() const {
+bool TestShellDelegate::IsMultiProfilesEnabled() const {
   return false;
 }
 
-void TestShellDelegate::LockScreen() {
-}
-
-void TestShellDelegate::UnlockScreen() {
-}
-
-bool TestShellDelegate::IsScreenLocked() const {
+bool TestShellDelegate::IsRunningInForcedAppMode() const {
   return false;
+}
+
+void TestShellDelegate::PreInit() {
 }
 
 void TestShellDelegate::Shutdown() {
@@ -59,6 +50,9 @@ void TestShellDelegate::NewWindow(bool incognito) {
 }
 
 void TestShellDelegate::ToggleMaximized() {
+}
+
+void TestShellDelegate::ToggleFullscreen() {
 }
 
 void TestShellDelegate::OpenFileManager(bool as_dialog) {
@@ -78,6 +72,11 @@ bool TestShellDelegate::RotatePaneFocus(ash::Shell::Direction direction) {
 }
 
 void TestShellDelegate::ShowKeyboardOverlay() {
+}
+
+keyboard::KeyboardControllerProxy*
+    TestShellDelegate::CreateKeyboardControllerProxy() {
+  return NULL;
 }
 
 void TestShellDelegate::ShowTaskManager() {
@@ -140,6 +139,12 @@ ash::UserWallpaperDelegate* TestShellDelegate::CreateUserWallpaperDelegate() {
   return NULL;
 }
 
+ash::SessionStateDelegate* TestShellDelegate::CreateSessionStateDelegate() {
+  DCHECK(!test_session_state_delegate_);
+  test_session_state_delegate_ = new ash::test::TestSessionStateDelegate;
+  return test_session_state_delegate_;
+}
+
 ash::CapsLockDelegate* TestShellDelegate::CreateCapsLockDelegate() {
   return new ash::CapsLockDelegateStub;
 }
@@ -164,12 +169,14 @@ void TestShellDelegate::HandleMediaPlayPause() {
 void TestShellDelegate::HandleMediaPrevTrack() {
 }
 
-string16 TestShellDelegate::GetTimeRemainingString(base::TimeDelta delta) {
-  return string16();
+base::string16 TestShellDelegate::GetTimeRemainingString(
+    base::TimeDelta delta) {
+  return base::string16();
 }
 
-string16 TestShellDelegate::GetTimeDurationLongString(base::TimeDelta delta) {
-  return string16();
+base::string16 TestShellDelegate::GetTimeDurationLongString(
+    base::TimeDelta delta) {
+  return base::string16();
 }
 
 void TestShellDelegate::SaveScreenMagnifierScale(double scale) {

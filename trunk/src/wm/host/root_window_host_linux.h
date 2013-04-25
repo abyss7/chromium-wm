@@ -15,10 +15,12 @@
 #include "base/hash_tables.h"
 #include "base/memory/scoped_ptr.h"
 #include "base/message_loop.h"
+#include "ui/aura/env_observer.h"
 #include "ui/aura/root_window_host.h"
 #include "ui/aura/window_observer.h"
 #include "ui/base/x/x11_atom_cache.h"
 #include "ui/base/x/x11_util.h"
+#include "ui/gfx/insets.h"
 #include "ui/gfx/rect.h"
 
 namespace ui {
@@ -35,6 +37,7 @@ class TouchEventCalibrate;
 // TODO(reveman): Reuse aura::RootWindowHostLinux code.
 class RootWindowHostLinux : public aura::RootWindowHost,
                             public MessageLoop::Dispatcher,
+                            public aura::EnvObserver,
                             public aura::WindowObserver,
                             public base::SupportsWeakPtr<RootWindowHostLinux> {
  public:
@@ -44,20 +47,7 @@ class RootWindowHostLinux : public aura::RootWindowHost,
   // Overridden from Dispatcher overrides:
   virtual bool Dispatch(const base::NativeEvent& event) OVERRIDE;
 
- private:
-  class MouseMoveFilter;
-
-  typedef base::hash_map< ::Window, scoped_refptr<ForeignWindow> >
-      ForeignWindowMap;
-
-  bool DispatchEventForRootWindow(const base::NativeEvent& event);
-
-  // Dispatches XI2 events. Note that some events targetted for the X root
-  // window are dispatched to the aura root window (e.g. touch events after
-  // calibration).
-  void DispatchXI2Event(const base::NativeEvent& event);
-
-  // Overridden from aura::RootWindowHost:
+  // RootWindowHost Overrides.
   virtual void SetDelegate(aura::RootWindowHostDelegate* delegate) OVERRIDE;
   virtual aura::RootWindow* GetRootWindow() OVERRIDE;
   virtual gfx::AcceleratedWidget GetAcceleratedWidget() OVERRIDE;
@@ -66,6 +56,8 @@ class RootWindowHostLinux : public aura::RootWindowHost,
   virtual void ToggleFullScreen() OVERRIDE;
   virtual gfx::Rect GetBounds() const OVERRIDE;
   virtual void SetBounds(const gfx::Rect& bounds) OVERRIDE;
+  virtual gfx::Insets GetInsets() const OVERRIDE;
+  virtual void SetInsets(const gfx::Insets& insets) OVERRIDE;
   virtual gfx::Point GetLocationOnNativeScreen() const OVERRIDE;
   virtual void SetCapture() OVERRIDE;
   virtual void ReleaseCapture() OVERRIDE;
@@ -86,6 +78,22 @@ class RootWindowHostLinux : public aura::RootWindowHost,
   virtual void OnDeviceScaleFactorChanged(float device_scale_factor) OVERRIDE;
   virtual void PrepareForShutdown() OVERRIDE;
 
+  // EnvObserver overrides.
+  virtual void OnWindowInitialized(aura::Window* window) OVERRIDE;
+  virtual void OnRootWindowInitialized(aura::RootWindow* root_window) OVERRIDE;
+ private:
+  typedef base::hash_map< ::Window, scoped_refptr<ForeignWindow> >
+      ForeignWindowMap;
+
+  class MouseMoveFilter;
+
+  bool DispatchEventForRootWindow(const base::NativeEvent& event);
+
+  // Dispatches XI2 events. Note that some events targetted for the X root
+  // window are dispatched to the aura root window (e.g. touch events after
+  // calibration).
+  void DispatchXI2Event(const base::NativeEvent& event);
+
   // Returns true if there's an X window manager present... in most cases.  Some
   // window managers (notably, ion3) don't implement enough of ICCCM for us to
   // detect that they're there.
@@ -102,6 +110,9 @@ class RootWindowHostLinux : public aura::RootWindowHost,
   // Copies and returns |snapshot_bounds| from |xwindow_|.  Helper method for
   // CopyAreaToSkCanvas() and GrabSnapshot().
   scoped_ptr<ui::XScopedImage> GetXImage(const gfx::Rect& snapshot_bounds);
+
+  // Update is_internal_display_ based on delegate_ state
+  void UpdateIsInternalDisplay();
 
   // Overridden from aura::WindowObserver:
   virtual void OnWindowAdded(aura::Window* window) OVERRIDE;
@@ -149,8 +160,14 @@ class RootWindowHostLinux : public aura::RootWindowHost,
   // The bounds of |xwindow_|.
   gfx::Rect bounds_;
 
+  // The insets that specifies the effective area within the |window_|.
+  gfx::Insets insets_;
+
   // The bounds of |x_root_window_|.
   gfx::Rect x_root_bounds_;
+
+  // True if the root host resides on the internal display
+  bool is_internal_display_;
 
   // True if the window should be focused when the window is shown.
   bool focus_when_shown_;

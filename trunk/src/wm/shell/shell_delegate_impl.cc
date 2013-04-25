@@ -5,6 +5,8 @@
 #include "wm/shell/shell_delegate_impl.h"
 
 #include "ash/caps_lock_delegate_stub.h"
+#include "ash/session_state_delegate.h"
+#include "ash/session_state_delegate_stub.h"
 #include "ash/shell/context_menu.h"
 #include "ash/shell/example_factory.h"
 #include "ash/shell/launcher_delegate_impl.h"
@@ -13,9 +15,34 @@
 #include "ash/wm/window_util.h"
 #include "base/message_loop.h"
 #include "ui/aura/window.h"
+#include "ui/keyboard/keyboard_controller_proxy.h"
+#include "ui/views/corewm/input_method_event_filter.h"
 #include "wm/host/root_window_host_factory.h"
 
 namespace wm {
+
+namespace {
+
+class DummyKeyboardControllerProxy : public keyboard::KeyboardControllerProxy {
+ public:
+  DummyKeyboardControllerProxy() {}
+  virtual ~DummyKeyboardControllerProxy() {}
+
+ private:
+  // Overridden from keyboard::KeyboardControllerProxy:
+  virtual content::BrowserContext* GetBrowserContext() OVERRIDE {
+    return ash::Shell::GetInstance()->browser_context();
+  }
+
+  virtual ui::InputMethod* GetInputMethod() OVERRIDE {
+    return ash::Shell::GetInstance()->input_method_filter()->input_method();
+  }
+
+  DISALLOW_COPY_AND_ASSIGN(DummyKeyboardControllerProxy);
+};
+
+}  // namespace
+
 namespace shell {
 
 ShellDelegateImpl::ShellDelegateImpl()
@@ -37,35 +64,19 @@ void ShellDelegateImpl::SetWatcher(ash::shell::WindowWatcher* watcher) {
     launcher_delegate_->set_watcher(watcher);
 }
 
-bool ShellDelegateImpl::IsUserLoggedIn() const {
-  return true;
-}
-
-bool ShellDelegateImpl::IsSessionStarted() const {
-  return true;
-}
-
 bool ShellDelegateImpl::IsFirstRunAfterBoot() const {
   return false;
 }
 
-bool ShellDelegateImpl::CanLockScreen() const {
-  return true;
+bool ShellDelegateImpl::IsMultiProfilesEnabled() const {
+  return false;
 }
 
-void ShellDelegateImpl::LockScreen() {
-  ash::shell::CreateLockScreen();
-  locked_ = true;
-  ash::Shell::GetInstance()->UpdateShelfVisibility();
+bool ShellDelegateImpl::IsRunningInForcedAppMode() const {
+  return false;
 }
 
-void ShellDelegateImpl::UnlockScreen() {
-  locked_ = false;
-  ash::Shell::GetInstance()->UpdateShelfVisibility();
-}
-
-bool ShellDelegateImpl::IsScreenLocked() const {
-  return locked_;
+void ShellDelegateImpl::PreInit() {
 }
 
 void ShellDelegateImpl::Shutdown() {
@@ -83,6 +94,10 @@ void ShellDelegateImpl::NewWindow(bool incognito) {
   create_params.can_resize = true;
   create_params.can_maximize = true;
   ash::shell::ToplevelWindow::CreateToplevelWindow(create_params);
+}
+
+void ShellDelegateImpl::ToggleFullscreen() {
+  ToggleMaximized();
 }
 
 void ShellDelegateImpl::ToggleMaximized() {
@@ -108,6 +123,11 @@ bool ShellDelegateImpl::RotatePaneFocus(ash::Shell::Direction direction) {
 }
 
 void ShellDelegateImpl::ShowKeyboardOverlay() {
+}
+
+keyboard::KeyboardControllerProxy*
+    ShellDelegateImpl::CreateKeyboardControllerProxy() {
+  return new DummyKeyboardControllerProxy();
 }
 
 void ShellDelegateImpl::ShowTaskManager() {
@@ -170,6 +190,10 @@ ash::SystemTrayDelegate* ShellDelegateImpl::CreateSystemTrayDelegate() {
 
 ash::UserWallpaperDelegate* ShellDelegateImpl::CreateUserWallpaperDelegate() {
   return NULL;
+}
+
+ash::SessionStateDelegate* ShellDelegateImpl::CreateSessionStateDelegate() {
+  return new ash::SessionStateDelegateStub;
 }
 
 ash::CapsLockDelegate* ShellDelegateImpl::CreateCapsLockDelegate() {

@@ -11,6 +11,10 @@
 #include "ui/aura/root_window.h"
 #include "ui/base/ime/text_input_test_support.h"
 #include "ui/compositor/layer_animator.h"
+#include "ui/compositor/scoped_animation_duration_scale_mode.h"
+#if defined(ENABLE_MESSAGE_CENTER)
+#include "ui/message_center/message_center.h"
+#endif
 #include "wm/foreign_test_window.h"
 #include "wm/gpu/foreign_window_texture_factory.h"
 #include "wm/host/foreign_test_window_host.h"
@@ -28,18 +32,24 @@ WmTestBase::~WmTestBase() {
 void WmTestBase::SetUp() {
   content::ImageTransportFactory::Initialize();
   ForeignWindowTextureFactory::Initialize();
+
   // Use the origin (1,1) so that it doesn't over
   // lap with the native mouse cursor.
   CommandLine::ForCurrentProcess()->AppendSwitchASCII(
       ash::switches::kAshHostWindowBounds, "1+1-800x600");
-#if defined(OS_WIN)
-  aura::test::SetUsePopupAsRootWindowForTest(true);
-#endif
   // Disable animations during tests.
-  ui::LayerAnimator::set_disable_animations_for_test(true);
+  zero_duration_mode_.reset(new ui::ScopedAnimationDurationScaleMode(
+      ui::ScopedAnimationDurationScaleMode::ZERO_DURATION));
   ui::TextInputTestSupport::Initialize();
+
   // Creates Shell and hook with Desktop.
   TestShellDelegate* delegate = new TestShellDelegate;
+
+#if defined(ENABLE_MESSAGE_CENTER)
+  // Creates MessageCenter since g_browser_process is not created in WmTestBase
+  // tests.
+  message_center::MessageCenter::Initialize();
+#endif
   ash::Shell::CreateInstance(delegate);
   ash::Shell::GetPrimaryRootWindow()->Show();
   ash::Shell::GetPrimaryRootWindow()->ShowRootWindow();
@@ -55,11 +65,15 @@ void WmTestBase::TearDown() {
 
   // Tear down the shell.
   ash::Shell::DeleteInstance();
+
+#if defined(ENABLE_MESSAGE_CENTER)
+  // Remove global message center state.
+  message_center::MessageCenter::Shutdown();
+#endif
+
   aura::Env::DeleteInstance();
   ui::TextInputTestSupport::Shutdown();
-#if defined(OS_WIN)
-  aura::test::SetUsePopupAsRootWindowForTest(false);
-#endif
+
   ForeignWindowTextureFactory::Terminate();
   content::ImageTransportFactory::Terminate();
 }

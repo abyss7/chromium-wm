@@ -11,6 +11,10 @@
 #include "testing/gtest/include/gtest/gtest.h"
 #include "ui/aura/env_observer.h"
 
+namespace ui {
+class ScopedAnimationDurationScaleMode;
+}
+
 namespace wm {
 namespace test {
 
@@ -30,6 +34,8 @@ class WmTestBase : public testing::Test {
 
  private:
   MessageLoopForUI message_loop_;
+
+  scoped_ptr<ui::ScopedAnimationDurationScaleMode> zero_duration_mode_;
 
   DISALLOW_COPY_AND_ASSIGN(WmTestBase);
 };
