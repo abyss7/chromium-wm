@@ -1,6 +1,6 @@
 vars = {
   'chromium_svn': 'http://src.chromium.org/svn/trunk/src',
-  'chromium_rev': '184577'
+  'chromium_rev': '196106'
 }
 
 deps = {
@@ -17,16 +17,22 @@ deps = {
     Var('chromium_svn')+'/breakpad@'+Var('chromium_rev'),
   'src/build/android':
     Var('chromium_svn')+'/build/android@'+Var('chromium_rev'),
+  'src/build/git-hooks':
+    Var('chromium_svn')+'/build/git-hooks@'+Var('chromium_rev'),
   'src/build/internal':
     Var('chromium_svn')+'/build/internal@'+Var('chromium_rev'),
   'src/build/ios':
     Var('chromium_svn')+'/build/ios@'+Var('chromium_rev'),
   'src/build/linux':
     Var('chromium_svn')+'/build/linux@'+Var('chromium_rev'),
+  'src/build/mac':
+    Var('chromium_svn')+'/build/mac@'+Var('chromium_rev'),
   'src/build/temp_gyp':
     Var('chromium_svn')+'/build/temp_gyp@'+Var('chromium_rev'),
   'src/build/util':
     Var('chromium_svn')+'/build/util@'+Var('chromium_rev'),
+  'src/build/win':
+    Var('chromium_svn')+'/build/win@'+Var('chromium_rev'),
   'src/cc':
     Var('chromium_svn')+'/cc@'+Var('chromium_rev'),
   'src/chrome':

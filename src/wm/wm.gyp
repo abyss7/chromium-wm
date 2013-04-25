@@ -93,6 +93,8 @@
         '../ash/test/test_activation_delegate.h',
         '../ash/test/test_launcher_delegate.cc',
         '../ash/test/test_launcher_delegate.h',
+        '../ash/test/test_session_state_delegate.cc',
+        '../ash/test/test_session_state_delegate.cc',
         '../ash/test/test_suite.cc',
         '../ash/test/test_suite.h',
         '../ash/test/test_suite_init.h',
@@ -183,6 +185,8 @@
         'wm',
       ],
       'sources': [
+        '../ash/session_state_delegate_stub.cc',
+        '../ash/session_state_delegate_stub.h',
         '../ash/shell/app_list.cc',
         '../ash/shell/bubble.cc',
         '../ash/shell/context_menu.cc',

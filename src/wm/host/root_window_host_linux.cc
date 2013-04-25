@@ -4,16 +4,16 @@
 
 #include "wm/host/root_window_host_linux.h"
 
+#include <strings.h>
+#include <X11/cursorfont.h>
+#include <X11/extensions/Xfixes.h>
+#include <X11/extensions/XInput2.h>
+#include <X11/extensions/Xcomposite.h>
+#include <X11/extensions/Xrandr.h>
+#include <X11/extensions/shape.h>
 #include <X11/Xatom.h>
 #include <X11/Xcursor/Xcursor.h>
 #include <X11/Xlib.h>
-#include <X11/cursorfont.h>
-#include <X11/extensions/XInput2.h>
-#include <X11/extensions/Xcomposite.h>
-#include <X11/extensions/Xfixes.h>
-#include <X11/extensions/Xrandr.h>
-#include <X11/extensions/shape.h>
-#include <strings.h>
 
 #include <algorithm>
 #include <limits>
@@ -23,6 +23,8 @@
 #include "base/message_loop.h"
 #include "base/message_pump_aurax11.h"
 #include "base/stl_util.h"
+#include "base/string_number_conversions.h"
+#include "base/string_util.h"
 #include "base/stringprintf.h"
 #include "third_party/skia/include/core/SkBitmap.h"
 #include "third_party/skia/include/core/SkCanvas.h"
@@ -37,7 +39,7 @@
 #include "ui/base/events/event.h"
 #include "ui/base/events/event_utils.h"
 #include "ui/base/keycodes/keyboard_codes.h"
-#include "ui/base/touch/touch_factory.h"
+#include "ui/base/touch/touch_factory_x11.h"
 #include "ui/base/ui_base_switches.h"
 #include "ui/base/view_prop.h"
 #include "ui/base/x/device_list_cache_x.h"
@@ -64,14 +66,6 @@ namespace {
 // Standard Linux mouse buttons for going back and forward.
 const int kBackMouseButton = 8;
 const int kForwardMouseButton = 9;
-
-// These are the same values that are used to calibrate touch events in
-// |CalibrateTouchCoordinates| (in ui/base/x/events_x.cc).
-// TODO(sad|skuhne): Remove the duplication of values (http://crbug.com/147605)
-const int kXRootWindowPaddingLeft = 40;
-const int kXRootWindowPaddingRight = 40;
-const int kXRootWindowPaddingBottom = 30;
-const int kXRootWindowPaddingTop = 0;
 
 const char* kAtomsToCache[] = {
   "WM_DELETE_WINDOW",
@@ -232,16 +226,100 @@ gfx::Rect GetTargetBoundsInRootWindow(const aura::Window* window) {
 
 namespace internal {
 
-// A very lightweight message-pump observer that routes all the touch events to
-// the X root window so that they can be calibrated properly.
+// Accomplishes 2 tasks concerning touch event calibration:
+// 1. Being a message-pump observer,
+//    routes all the touch events to the X root window,
+//    where they can be calibrated later.
+// 2. Has the Calibrate method that does the actual bezel calibration,
+//    when invoked from X root window's event dispatcher.
 class TouchEventCalibrate : public base::MessagePumpObserver {
  public:
-  TouchEventCalibrate() {
+  TouchEventCalibrate()
+    : left_(0),
+      right_(0),
+      top_(0),
+      bottom_(0) {
     MessageLoopForUI::current()->AddObserver(this);
+#if defined(USE_XI2_MT)
+    std::vector<std::string> parts;
+    if (Tokenize(CommandLine::ForCurrentProcess()->GetSwitchValueASCII(
+        switches::kTouchCalibration), ",", &parts) >= 4) {
+      if (!base::StringToInt(parts[0], &left_))
+        DLOG(ERROR) << "Incorrect left border calibration value passed.";
+      if (!base::StringToInt(parts[1], &right_))
+        DLOG(ERROR) << "Incorrect right border calibration value passed.";
+      if (!base::StringToInt(parts[2], &top_))
+        DLOG(ERROR) << "Incorrect top border calibration value passed.";
+      if (!base::StringToInt(parts[3], &bottom_))
+        DLOG(ERROR) << "Incorrect bottom border calibration value passed.";
+    }
+#endif  // defined(USE_XI2_MT)
   }
 
   virtual ~TouchEventCalibrate() {
     MessageLoopForUI::current()->RemoveObserver(this);
+  }
+
+  // Modify the location of the |event|,
+  // expanding it from |bounds| to (|bounds| + bezels).
+  // Required when touchscreen is bigger than screen (i.e. has bezels),
+  // because we receive events in touchscreen coordinates,
+  // which need to be expanded when converting to screen coordinates,
+  // so that location on bezels will be outside of screen area.
+  void Calibrate(ui::TouchEvent* event, const gfx::Rect& bounds) {
+#if defined(USE_XI2_MT)
+    int x = event->x();
+    int y = event->y();
+
+    if (!left_ && !right_ && !top_ && !bottom_)
+      return;
+
+    const int resolution_x = bounds.width();
+    const int resolution_y = bounds.height();
+    // The "grace area" (10% in this case) is to make it easier for the user to
+    // navigate to the corner.
+    const double kGraceAreaFraction = 0.1;
+    if (left_ || right_) {
+      // Offset the x position to the real
+      x -= left_;
+      // Check if we are in the grace area of the left side.
+      // Note: We might not want to do this when the gesture is locked?
+      if (x < 0 && x > -left_ * kGraceAreaFraction)
+        x = 0;
+      // Check if we are in the grace area of the right side.
+      // Note: We might not want to do this when the gesture is locked?
+      if (x > resolution_x - left_ &&
+          x < resolution_x - left_ + right_ * kGraceAreaFraction)
+        x = resolution_x - left_;
+      // Scale the screen area back to the full resolution of the screen.
+      x = (x * resolution_x) / (resolution_x - (right_ + left_));
+    }
+    if (top_ || bottom_) {
+      // When there is a top bezel we add our border,
+      y -= top_;
+
+      // Check if we are in the grace area of the top side.
+      // Note: We might not want to do this when the gesture is locked?
+      if (y < 0 && y > -top_ * kGraceAreaFraction)
+        y = 0;
+
+      // Check if we are in the grace area of the bottom side.
+      // Note: We might not want to do this when the gesture is locked?
+      if (y > resolution_y - top_ &&
+          y < resolution_y - top_ + bottom_ * kGraceAreaFraction)
+        y = resolution_y - top_;
+      // Scale the screen area back to the full resolution of the screen.
+      y = (y * resolution_y) / (resolution_y - (bottom_ + top_));
+    }
+
+    // Set the modified coordinate back to the event.
+    if (event->root_location() == event->location()) {
+      // Usually those will be equal,
+      // if not, I am not sure what the correct value should be.
+      event->set_root_location(gfx::Point(x, y));
+    }
+    event->set_location(gfx::Point(x, y));
+#endif  // defined(USE_XI2_MT)
   }
 
  private:
@@ -258,12 +336,20 @@ class TouchEventCalibrate : public base::MessagePumpObserver {
       xievent->event_x = xievent->root_x;
       xievent->event_y = xievent->root_y;
     }
-#endif
+#endif  // defined(USE_XI2_MT)
     return base::EVENT_CONTINUE;
   }
 
   virtual void DidProcessEvent(const base::NativeEvent& event) OVERRIDE {
   }
+
+  // The difference in screen's native resolution pixels between
+  // the border of the touchscreen and the border of the screen,
+  // aka bezel sizes.
+  int left_;
+  int right_;
+  int top_;
+  int bottom_;
 
   DISALLOW_COPY_AND_ASSIGN(TouchEventCalibrate);
 };
@@ -322,6 +408,7 @@ RootWindowHostLinux::RootWindowHostLinux(const gfx::Rect& bounds)
       current_cursor_(ui::kCursorNull),
       window_mapped_(false),
       bounds_(bounds),
+      is_internal_display_(false),
       focus_when_shown_(false),
       touch_calibrate_(new internal::TouchEventCalibrate),
       mouse_move_filter_(new MouseMoveFilter),
@@ -403,13 +490,15 @@ RootWindowHostLinux::RootWindowHostLinux(const gfx::Rect& bounds)
   // window to broadcast.
   // TODO(jhorwich) Remove this once Chrome supports window-based broadcasting.
   static int root_window_number = 0;
-  std::string name = StringPrintf("aura_root_%d", root_window_number++);
+  std::string name = base::StringPrintf("aura_root_%d", root_window_number++);
   XStoreName(xdisplay_, xwindow_, name.c_str());
   XRRSelectInput(xdisplay_, x_root_window_,
                  RRScreenChangeNotifyMask | RROutputChangeNotifyMask);
+  aura::Env::GetInstance()->AddObserver(this);
 }
 
 RootWindowHostLinux::~RootWindowHostLinux() {
+  aura::Env::GetInstance()->RemoveObserver(this);
   base::MessagePumpAuraX11::Current()->RemoveDispatcherForRootWindow(this);
   base::MessagePumpAuraX11::Current()->RemoveDispatcherForWindow(xwindow_);
 
@@ -531,9 +620,12 @@ bool RootWindowHostLinux::Dispatch(const base::NativeEvent& event) {
       TranslateAndDispatchMouseEvent(&mouseenter_event);
       break;
     }
-    case Expose:
-      delegate_->AsRootWindow()->ScheduleFullDraw();
+    case Expose: {
+      gfx::Rect damage_rect(xev->xexpose.x, xev->xexpose.y,
+                            xev->xexpose.width, xev->xexpose.height);
+      delegate_->AsRootWindow()->ScheduleRedrawRect(damage_rect);
       break;
+    }
     case KeyPress: {
       ui::KeyEvent keydown_event(xev, false);
       delegate_->OnHostKeyEvent(&keydown_event);
@@ -578,9 +670,10 @@ bool RootWindowHostLinux::Dispatch(const base::NativeEvent& event) {
       bool size_changed = bounds_.size() != bounds.size();
       bool origin_changed = bounds_.origin() != bounds.origin();
       bounds_ = bounds;
+      UpdateIsInternalDisplay();
       // Always update barrier and mouse location because |bounds_| might
       // have already been updated in |SetBounds|.
-      if (pointer_barriers_.get()) {
+      if (pointer_barriers_) {
         UnConfineCursor();
         ConfineCursorToRootWindow();
       }
@@ -964,6 +1057,7 @@ void RootWindowHostLinux::SetBounds(const gfx::Rect& bounds) {
   // (possibly synthetic) ConfigureNotify about the actual size and correct
   // |bounds_| later.
   bounds_ = bounds;
+  UpdateIsInternalDisplay();
   if (origin_changed)
     delegate_->OnHostMoved(bounds.origin());
   if (size_changed || current_scale != new_scale) {
@@ -971,6 +1065,18 @@ void RootWindowHostLinux::SetBounds(const gfx::Rect& bounds) {
   } else {
     delegate_->AsRootWindow()->SchedulePaintInRect(
         delegate_->AsRootWindow()->bounds());
+  }
+}
+
+gfx::Insets RootWindowHostLinux::GetInsets() const {
+  return insets_;
+}
+
+void RootWindowHostLinux::SetInsets(const gfx::Insets& insets) {
+  insets_ = insets;
+  if (pointer_barriers_) {
+    UnConfineCursor();
+    ConfineCursorToRootWindow();
   }
 }
 
@@ -1020,33 +1126,33 @@ bool RootWindowHostLinux::QueryMouseLocation(gfx::Point* location_return) {
 bool RootWindowHostLinux::ConfineCursorToRootWindow() {
 #if XFIXES_MAJOR >= 5
   DCHECK(!pointer_barriers_.get());
-  if (pointer_barriers_.get())
+  if (pointer_barriers_)
     return false;
-  // TODO(oshima): There is a know issue where the pointer barrier
-  // leaks mouse pointer under certain conditions. crbug.com/133694.
   pointer_barriers_.reset(new XID[4]);
+  gfx::Rect bounds(bounds_);
+  bounds.Inset(insets_);
   // Horizontal, top barriers.
   pointer_barriers_[0] = XFixesCreatePointerBarrier(
       xdisplay_, x_root_window_,
-      bounds_.x(), bounds_.y(), bounds_.right(), bounds_.y(),
+      bounds.x(), bounds.y(), bounds.right(), bounds.y(),
       BarrierPositiveY,
       0, XIAllDevices);
   // Horizontal, bottom barriers.
   pointer_barriers_[1] = XFixesCreatePointerBarrier(
       xdisplay_, x_root_window_,
-      bounds_.x(), bounds_.bottom(), bounds_.right(),  bounds_.bottom(),
+      bounds.x(), bounds.bottom(), bounds.right(),  bounds.bottom(),
       BarrierNegativeY,
       0, XIAllDevices);
   // Vertical, left  barriers.
   pointer_barriers_[2] = XFixesCreatePointerBarrier(
       xdisplay_, x_root_window_,
-      bounds_.x(), bounds_.y(), bounds_.x(), bounds_.bottom(),
+      bounds.x(), bounds.y(), bounds.x(), bounds.bottom(),
       BarrierPositiveX,
       0, XIAllDevices);
   // Vertical, right barriers.
   pointer_barriers_[3] = XFixesCreatePointerBarrier(
       xdisplay_, x_root_window_,
-      bounds_.right(), bounds_.y(), bounds_.right(), bounds_.bottom(),
+      bounds.right(), bounds.y(), bounds.right(), bounds.bottom(),
       BarrierNegativeX,
       0, XIAllDevices);
 #endif
@@ -1055,7 +1161,7 @@ bool RootWindowHostLinux::ConfineCursorToRootWindow() {
 
 void RootWindowHostLinux::UnConfineCursor() {
 #if XFIXES_MAJOR >= 5
-  if (pointer_barriers_.get()) {
+  if (pointer_barriers_) {
     XFixesDestroyPointerBarrier(xdisplay_, pointer_barriers_[0]);
     XFixesDestroyPointerBarrier(xdisplay_, pointer_barriers_[1]);
     XFixesDestroyPointerBarrier(xdisplay_, pointer_barriers_[2]);
@@ -1114,7 +1220,7 @@ bool RootWindowHostLinux::CopyAreaToSkCanvas(const gfx::Rect& source_bounds,
                                              const gfx::Point& dest_offset,
                                              SkCanvas* canvas) {
   scoped_ptr<ui::XScopedImage> scoped_image(GetXImage(source_bounds));
-  if (!scoped_image.get())
+  if (!scoped_image)
     return false;
 
   XImage* image = scoped_image->get();
@@ -1155,7 +1261,7 @@ bool RootWindowHostLinux::GrabSnapshot(
     const gfx::Rect& snapshot_bounds,
     std::vector<unsigned char>* png_representation) {
   scoped_ptr<ui::XScopedImage> scoped_image(GetXImage(snapshot_bounds));
-  if (!scoped_image.get())
+  if (!scoped_image)
     return false;
 
   XImage* image = scoped_image->get();
@@ -1233,6 +1339,22 @@ void RootWindowHostLinux::PrepareForShutdown() {
   base::MessagePumpAuraX11::Current()->RemoveDispatcherForWindow(xwindow_);
 }
 
+void RootWindowHostLinux::OnWindowInitialized(aura::Window* window) {
+}
+
+void RootWindowHostLinux::OnRootWindowInitialized(
+    aura::RootWindow* root_window) {
+  // UpdateIsInternalDisplay relies on:
+  // 1. delegate_ pointing to RootWindow - available after SetDelegate.
+  // 2. RootWindow's kDisplayIdKey property set - available by the time
+  //    RootWindow::Init is called.
+  //    (set in DisplayManager::CreateRootWindowForDisplay)
+  // Ready when NotifyRootWindowInitialized is called from RootWindow::Init.
+  if (!delegate_ || root_window != GetRootWindow())
+    return;
+  UpdateIsInternalDisplay();
+}
+
 bool RootWindowHostLinux::DispatchEventForRootWindow(
     const base::NativeEvent& event) {
   switch (event->type) {
@@ -1272,16 +1394,8 @@ void RootWindowHostLinux::DispatchXI2Event(const base::NativeEvent& event) {
       ui::TouchEvent touchev(xev);
 #if defined(OS_CHROMEOS)
       if (base::chromeos::IsRunningOnChromeOS()) {
-        if (!bounds_.Contains(touchev.location())) {
-          // This might still be in the bezel region.
-          gfx::Rect expanded(bounds_);
-          expanded.Inset(-kXRootWindowPaddingLeft,
-                         -kXRootWindowPaddingTop,
-                         -kXRootWindowPaddingRight,
-                         -kXRootWindowPaddingBottom);
-          if (!expanded.Contains(touchev.location()))
-            break;
-        }
+        if (!bounds_.Contains(touchev.location()))
+          break;
         // X maps the touch-surface to the size of the X root-window.
         // In multi-monitor setup, Coordinate Transformation Matrix
         // repositions the touch-surface onto part of X root-window
@@ -1289,6 +1403,10 @@ void RootWindowHostLinux::DispatchXI2Event(const base::NativeEvent& event) {
         // However, if aura root-window has non-zero origin,
         // we need to relocate the event into aura root-window coordinates.
         touchev.Relocate(bounds_.origin());
+#if defined(USE_XI2_MT)
+        if (is_internal_display_)
+          touch_calibrate_->Calibrate(&touchev, bounds_);
+#endif  // defined(USE_XI2_MT)
       }
 #endif  // defined(OS_CHROMEOS)
       delegate_->OnHostTouchEvent(&touchev);
@@ -1377,16 +1495,20 @@ void RootWindowHostLinux::SetCursorInternal(gfx::NativeCursor cursor) {
 
 void RootWindowHostLinux::TranslateAndDispatchMouseEvent(
     ui::MouseEvent* event) {
-  aura::RootWindow* root = GetRootWindow();
+  aura::RootWindow* root_window = GetRootWindow();
   aura::client::ScreenPositionClient* screen_position_client =
-      GetScreenPositionClient(root);
-  if (screen_position_client && !bounds_.Contains(event->location())) {
+      GetScreenPositionClient(root_window);
+  gfx::Rect local(bounds_.size());
+
+  if (screen_position_client && !local.Contains(event->location())) {
     gfx::Point location(event->location());
-    screen_position_client->ConvertNativePointToScreen(root, &location);
-    screen_position_client->ConvertPointFromScreen(root, &location);
-    // |delegate_|'s OnHoustMouseEvent expects native coordinates relative to
-    // root.
-    location = ui::ConvertPointToPixel(root->layer(), location);
+    // In order to get the correct point in screen coordinates
+    // during passive grab, we first need to find on which host window
+    // the mouse is on, and find out the screen coordinates on that
+    // host window, then convert it back to this host window's coordinate.
+    screen_position_client->ConvertHostPointToScreen(root_window, &location);
+    screen_position_client->ConvertPointFromScreen(root_window, &location);
+    root_window->ConvertPointToHost(&location);
     event->set_location(location);
     event->set_root_location(location);
   }
@@ -1400,11 +1522,18 @@ scoped_ptr<ui::XScopedImage> RootWindowHostLinux::GetXImage(
                 snapshot_bounds.x(), snapshot_bounds.y(),
                 snapshot_bounds.width(), snapshot_bounds.height(),
                 AllPlanes, ZPixmap)));
-  if (!image->get()) {
+  if (!image) {
     LOG(ERROR) << "XGetImage failed";
     image.reset();
   }
   return image.Pass();
+}
+
+void RootWindowHostLinux::UpdateIsInternalDisplay() {
+  aura::RootWindow* root_window = GetRootWindow();
+  gfx::Screen* screen = gfx::Screen::GetScreenFor(root_window);
+  gfx::Display display = screen->GetDisplayNearestWindow(root_window);
+  is_internal_display_ = display.IsInternal();
 }
 
 }  // namespace wm

@@ -9,6 +9,12 @@
 #include "base/compiler_specific.h"
 #include "base/memory/scoped_ptr.h"
 
+namespace ash {
+namespace test {
+class TestSessionStateDelegate;
+}
+}
+
 namespace wm {
 namespace test {
 
@@ -18,17 +24,15 @@ class TestShellDelegate : public ash::ShellDelegate {
   virtual ~TestShellDelegate();
 
   // Overridden from ShellDelegate:
-  virtual bool IsUserLoggedIn() const OVERRIDE;
-  virtual bool IsSessionStarted() const OVERRIDE;
   virtual bool IsFirstRunAfterBoot() const OVERRIDE;
-  virtual bool CanLockScreen() const OVERRIDE;
-  virtual void LockScreen() OVERRIDE;
-  virtual void UnlockScreen() OVERRIDE;
-  virtual bool IsScreenLocked() const OVERRIDE;
+  virtual bool IsMultiProfilesEnabled() const OVERRIDE;
+  virtual bool IsRunningInForcedAppMode() const OVERRIDE;
+  virtual void PreInit() OVERRIDE;
   virtual void Shutdown() OVERRIDE;
   virtual void Exit() OVERRIDE;
   virtual void NewTab() OVERRIDE;
   virtual void NewWindow(bool incognito) OVERRIDE;
+  virtual void ToggleFullscreen() OVERRIDE;
   virtual void ToggleMaximized() OVERRIDE;
   virtual void OpenFileManager(bool as_dialog) OVERRIDE;
   virtual void OpenCrosh() OVERRIDE;
@@ -36,6 +40,8 @@ class TestShellDelegate : public ash::ShellDelegate {
   virtual void RestoreTab() OVERRIDE;
   virtual bool RotatePaneFocus(ash::Shell::Direction direction) OVERRIDE;
   virtual void ShowKeyboardOverlay() OVERRIDE;
+  virtual keyboard::KeyboardControllerProxy*
+      CreateKeyboardControllerProxy() OVERRIDE;
   virtual void ShowTaskManager() OVERRIDE;
   virtual content::BrowserContext* GetCurrentBrowserContext() OVERRIDE;
   virtual void ToggleSpokenFeedback(
@@ -54,14 +60,17 @@ class TestShellDelegate : public ash::ShellDelegate {
   virtual ash::SystemTrayDelegate* CreateSystemTrayDelegate() OVERRIDE;
   virtual ash::UserWallpaperDelegate* CreateUserWallpaperDelegate() OVERRIDE;
   virtual ash::CapsLockDelegate* CreateCapsLockDelegate() OVERRIDE;
+  virtual ash::SessionStateDelegate* CreateSessionStateDelegate() OVERRIDE;
   virtual aura::client::UserActionClient* CreateUserActionClient() OVERRIDE;
   virtual void OpenFeedbackPage() OVERRIDE;
   virtual void RecordUserMetricsAction(ash::UserMetricsAction action) OVERRIDE;
   virtual void HandleMediaNextTrack() OVERRIDE;
   virtual void HandleMediaPlayPause() OVERRIDE;
   virtual void HandleMediaPrevTrack() OVERRIDE;
-  virtual string16 GetTimeRemainingString(base::TimeDelta delta) OVERRIDE;
-  virtual string16 GetTimeDurationLongString(base::TimeDelta delta) OVERRIDE;
+  virtual base::string16 GetTimeRemainingString(
+      base::TimeDelta delta) OVERRIDE;
+  virtual base::string16 GetTimeDurationLongString(
+      base::TimeDelta delta) OVERRIDE;
   virtual void SaveScreenMagnifierScale(double scale) OVERRIDE;
   virtual double GetSavedScreenMagnifierScale() OVERRIDE;
   virtual ui::MenuModel* CreateContextMenu(aura::RootWindow* root) OVERRIDE;
@@ -73,6 +82,8 @@ class TestShellDelegate : public ash::ShellDelegate {
   ash::MagnifierType screen_magnifier_type_;
 
   scoped_ptr<content::BrowserContext> current_browser_context_;
+
+  ash::test::TestSessionStateDelegate* test_session_state_delegate_;
 
   DISALLOW_COPY_AND_ASSIGN(TestShellDelegate);
 };

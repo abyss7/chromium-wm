@@ -16,8 +16,12 @@
 #include "wm/gpu/foreign_window_texture_factory.h"
 #include "wm/shell/shell_delegate_impl.h"
 
+#if defined(ENABLE_MESSAGE_CENTER)
+#include "ui/message_center/message_center.h"
+#endif
+
 #if defined(OS_LINUX)
-#include "ui/base/touch/touch_factory.h"
+#include "ui/base/touch/touch_factory_x11.h"
 #endif
 
 #if defined(OS_CHROMEOS)
@@ -85,6 +89,11 @@ void ShellBrowserMainParts::PreMainMessageLoopRun() {
     views::ViewsDelegate::views_delegate = new ShellViewsDelegate;
 
   wm::shell::ShellDelegateImpl* delegate = new wm::shell::ShellDelegateImpl;
+#if defined(ENABLE_MESSAGE_CENTER)
+  // The global message center state must be initialized absent
+  // g_browser_process.
+  message_center::MessageCenter::Initialize();
+#endif
   ash::Shell::CreateInstance(delegate);
   ash::Shell::GetInstance()->set_browser_context(browser_context_.get());
 
@@ -111,6 +120,11 @@ void ShellBrowserMainParts::PostMainMessageLoopRun() {
   browser_context_.reset();
   window_watcher_.reset();
   ash::Shell::DeleteInstance();
+#if defined(ENABLE_MESSAGE_CENTER)
+  // The global message center state must be shutdown absent
+  // g_browser_process.
+  message_center::MessageCenter::Shutdown();
+#endif
   aura::Env::DeleteInstance();
   ForeignWindowTextureFactory::Terminate();
 }
