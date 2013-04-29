@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef WM_HOST_FOREIGN_WINDOW_HOST_LINUX_H_
-#define WM_HOST_FOREIGN_WINDOW_HOST_LINUX_H_
+#ifndef WM_HOST_FOREIGN_WINDOW_HOST_X11_H_
+#define WM_HOST_FOREIGN_WINDOW_HOST_X11_H_
 
 #include <X11/Xlib.h>
 
@@ -15,13 +15,13 @@
 
 namespace wm {
 
-class ForeignWindowHostLinux : public ForeignWindowHost,
-                               public MessageLoop::Dispatcher {
+class ForeignWindowHostX11 : public ForeignWindowHost,
+                             public MessageLoop::Dispatcher {
  public:
-  explicit ForeignWindowHostLinux(gfx::PluginWindowHandle window_handle);
-  virtual ~ForeignWindowHostLinux();
+  explicit ForeignWindowHostX11(gfx::PluginWindowHandle window_handle);
+  virtual ~ForeignWindowHostX11();
 
-  // Overridden from wm::ForeignWindowHost:
+  // Overridden from ForeignWindowHost:
   virtual void SetDelegate(ForeignWindowHostDelegate* delegate) OVERRIDE;
   virtual gfx::PluginWindowHandle GetWindowHandle() const OVERRIDE;
   virtual void Close() OVERRIDE;
@@ -35,9 +35,9 @@ class ForeignWindowHostLinux : public ForeignWindowHost,
   gfx::PluginWindowHandle window_handle_;
   ForeignWindowHostDelegate* delegate_;
 
-  DISALLOW_COPY_AND_ASSIGN(ForeignWindowHostLinux);
+  DISALLOW_COPY_AND_ASSIGN(ForeignWindowHostX11);
 };
 
 }  // namespace wm
 
-#endif  // WM_HOST_FOREIGN_WINDOW_HOST_LINUX_H_
+#endif  // WM_HOST_FOREIGN_WINDOW_HOST_X11_H_

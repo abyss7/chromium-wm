@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef WM_HOST_FOREIGN_TEST_WINDOW_HOST_LINUX_H_
-#define WM_HOST_FOREIGN_TEST_WINDOW_HOST_LINUX_H_
+#ifndef WM_HOST_FOREIGN_TEST_WINDOW_HOST_X11_H_
+#define WM_HOST_FOREIGN_TEST_WINDOW_HOST_X11_H_
 
 #include <X11/Xlib.h>
 
@@ -19,10 +19,13 @@
 namespace wm {
 class ForeignWindowManager;
 
-class ForeignTestWindowHostLinux : public ForeignTestWindowHost,
-                                   public MessageLoopForIO::Watcher {
+class ForeignTestWindowHostX11 : public ForeignTestWindowHost,
+                                 public MessageLoopForIO::Watcher {
  public:
-  explicit ForeignTestWindowHostLinux(ForeignWindowManager* window_manager);
+  explicit ForeignTestWindowHostX11(ForeignWindowManager* window_manager);
+
+  // This is guaranteed to run all tasks up to the last Sync() call.
+  static void RunAllPendingInMessageLoop();
 
   // Overridden from ForeignTestWindowHost:
   virtual void Initialize() OVERRIDE;
@@ -37,7 +40,7 @@ class ForeignTestWindowHostLinux : public ForeignTestWindowHost,
   virtual void OnFileCanWriteWithoutBlocking(int fd) OVERRIDE;
 
  protected:
-  virtual ~ForeignTestWindowHostLinux();
+  virtual ~ForeignTestWindowHostX11();
 
  private:
   void ProcessXEvent(XEvent* event);
@@ -53,9 +56,9 @@ class ForeignTestWindowHostLinux : public ForeignTestWindowHost,
 
   MessageLoopForIO::FileDescriptorWatcher connection_watcher_;
 
-  DISALLOW_COPY_AND_ASSIGN(ForeignTestWindowHostLinux);
+  DISALLOW_COPY_AND_ASSIGN(ForeignTestWindowHostX11);
 };
 
 }  // namespace wm
 
-#endif  // WM_HOST_FOREIGN_TEST_WINDOW_HOST_LINUX_H_
+#endif  // WM_HOST_FOREIGN_TEST_WINDOW_HOST_X11_H_
