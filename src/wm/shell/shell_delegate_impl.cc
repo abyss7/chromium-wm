@@ -17,7 +17,7 @@
 #include "ui/aura/window.h"
 #include "ui/keyboard/keyboard_controller_proxy.h"
 #include "ui/views/corewm/input_method_event_filter.h"
-#include "wm/host/root_window_host_factory.h"
+#include "wm/foreign_window_manager.h"
 
 namespace wm {
 
@@ -46,7 +46,8 @@ class DummyKeyboardControllerProxy : public keyboard::KeyboardControllerProxy {
 namespace shell {
 
 ShellDelegateImpl::ShellDelegateImpl()
-    : watcher_(NULL),
+    : foreign_window_manager_(NULL),
+      watcher_(NULL),
       launcher_delegate_(NULL),
       locked_(false),
       spoken_feedback_enabled_(false),
@@ -56,6 +57,11 @@ ShellDelegateImpl::ShellDelegateImpl()
 }
 
 ShellDelegateImpl::~ShellDelegateImpl() {
+}
+
+void ShellDelegateImpl::SetForeignWindowManager(
+    ForeignWindowManager* foreign_window_manager) {
+  foreign_window_manager_ = foreign_window_manager;
 }
 
 void ShellDelegateImpl::SetWatcher(ash::shell::WindowWatcher* watcher) {
@@ -240,7 +246,8 @@ ui::MenuModel* ShellDelegateImpl::CreateContextMenu(aura::RootWindow* root) {
 }
 
 ash::RootWindowHostFactory* ShellDelegateImpl::CreateRootWindowHostFactory() {
-  return RootWindowHostFactory::Create();
+  DCHECK(foreign_window_manager_);
+  return foreign_window_manager_->CreateRootWindowHostFactory();
 }
 
 string16 ShellDelegateImpl::GetProductName() const {

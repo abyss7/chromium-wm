@@ -16,6 +16,8 @@ class ScopedAnimationDurationScaleMode;
 }
 
 namespace wm {
+class ForeignWindowManager;
+
 namespace test {
 
 class WmTestBase : public testing::Test {
@@ -24,6 +26,10 @@ class WmTestBase : public testing::Test {
   virtual ~WmTestBase();
 
   MessageLoopForUI* message_loop() { return &message_loop_; }
+
+  ForeignWindowManager* foreign_window_manager() {
+    return foreign_window_manager_.get();
+  }
 
   // Overridden from testing::Test:
   virtual void SetUp() OVERRIDE;
@@ -34,6 +40,8 @@ class WmTestBase : public testing::Test {
 
  private:
   MessageLoopForUI message_loop_;
+
+  scoped_ptr<ForeignWindowManager> foreign_window_manager_;
 
   scoped_ptr<ui::ScopedAnimationDurationScaleMode> zero_duration_mode_;
 

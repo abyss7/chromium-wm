@@ -8,18 +8,24 @@
 #include "ash/test/test_launcher_delegate.h"
 #include "ash/test/test_session_state_delegate.h"
 #include "content/public/test/test_browser_context.h"
-#include "wm/host/root_window_host_factory.h"
+#include "wm/foreign_window_manager.h"
 
 namespace wm {
 namespace test {
 
 TestShellDelegate::TestShellDelegate()
-    : screen_magnifier_enabled_(false),
+    : foreign_window_manager_(NULL),
+      screen_magnifier_enabled_(false),
       screen_magnifier_type_(ash::kDefaultMagnifierType),
       test_session_state_delegate_(NULL) {
 }
 
 TestShellDelegate::~TestShellDelegate() {
+}
+
+void TestShellDelegate::SetForeignWindowManager(
+    ForeignWindowManager* foreign_window_manager) {
+  foreign_window_manager_ = foreign_window_manager;
 }
 
 bool TestShellDelegate::IsFirstRunAfterBoot() const {
@@ -191,7 +197,8 @@ double TestShellDelegate::GetSavedScreenMagnifierScale() {
 }
 
 ash::RootWindowHostFactory* TestShellDelegate::CreateRootWindowHostFactory() {
-  return RootWindowHostFactory::Create();
+  DCHECK(foreign_window_manager_);
+  return foreign_window_manager_->CreateRootWindowHostFactory();
 }
 
 string16 TestShellDelegate::GetProductName() const {

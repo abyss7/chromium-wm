@@ -17,11 +17,12 @@
 #include "wm/host/foreign_test_window_host.h"
 
 namespace wm {
+class ForeignWindowManager;
 
 class ForeignTestWindowHostLinux : public ForeignTestWindowHost,
                                    public MessageLoopForIO::Watcher {
  public:
-  explicit ForeignTestWindowHostLinux(aura::RootWindow* root_window);
+  explicit ForeignTestWindowHostLinux(ForeignWindowManager* window_manager);
 
   // Overridden from ForeignTestWindowHost:
   virtual void Initialize() OVERRIDE;

@@ -5,11 +5,8 @@
 #ifndef WM_HOST_FOREIGN_TEST_WINDOW_HOST_H_
 #define WM_HOST_FOREIGN_TEST_WINDOW_HOST_H_
 
-namespace aura {
-class RootWindow;
-}
-
 namespace wm {
+class ForeignWindowManager;
 
 class ForeignTestWindowHost {
  public:
@@ -17,7 +14,7 @@ class ForeignTestWindowHost {
 
   // Creates a new ForeignTestWindowHost. Caller owns return value and must
   // call Destroy() to delete instance.
-  static ForeignTestWindowHost* Create(aura::RootWindow* root_window);
+  static ForeignTestWindowHost* Create(ForeignWindowManager* window_manager);
 
   // This is guaranteed to run all tasks up to the last Sync() call.
   static void RunAllPendingInMessageLoop();

@@ -10,20 +10,17 @@
 #include "base/compiler_specific.h"
 #include "base/memory/scoped_ptr.h"
 
-namespace aura {
-class RootWindow;
-}
-
 namespace wm {
 class ForeignTestWindowHost;
+class ForeignWindowManager;
 
 // This class implements a foreign window to use for testing purposes.
 class ForeignTestWindow {
  public:
   struct CreateParams {
-    explicit CreateParams(aura::RootWindow* root_window);
+    explicit CreateParams(ForeignWindowManager* window_manager);
 
-    aura::RootWindow* root_window;
+    ForeignWindowManager* window_manager;
   };
   explicit ForeignTestWindow(const CreateParams& params);
   virtual ~ForeignTestWindow();

@@ -16,12 +16,16 @@ class TestSessionStateDelegate;
 }
 
 namespace wm {
+class ForeignWindowManager;
+
 namespace test {
 
 class TestShellDelegate : public ash::ShellDelegate {
  public:
   TestShellDelegate();
   virtual ~TestShellDelegate();
+
+  void SetForeignWindowManager(ForeignWindowManager* foreign_window_manager);
 
   // Overridden from ShellDelegate:
   virtual bool IsFirstRunAfterBoot() const OVERRIDE;
@@ -78,6 +82,8 @@ class TestShellDelegate : public ash::ShellDelegate {
   virtual string16 GetProductName() const OVERRIDE;
 
  private:
+  ForeignWindowManager* foreign_window_manager_;
+
   bool screen_magnifier_enabled_;
   ash::MagnifierType screen_magnifier_type_;
 
