@@ -39,6 +39,8 @@
         'foreign_window.h',
         'foreign_window_client_view.cc',
         'foreign_window_client_view.h',
+        'foreign_window_manager.cc',
+        'foreign_window_manager.h',
         'foreign_window_widget.cc',
         'foreign_window_widget.h',
         'gpu/foreign_window_texture_factory.cc',
@@ -48,17 +50,16 @@
         'host/foreign_window_host_delegate.h',
         'host/foreign_window_host_linux.cc',
         'host/foreign_window_host_linux.h',
-        'host/root_window_host_factory.cc',
-        'host/root_window_host_factory.h',
-        'host/root_window_host_factory_linux.cc',
-        'host/root_window_host_linux.cc',
-        'host/root_window_host_linux.h',
+        'host/foreign_window_manager_host.cc',
+        'host/foreign_window_manager_host.h',
+        'host/foreign_window_manager_host_linux.cc',
+        'host/foreign_window_manager_host_linux.h',
       ],
       'conditions': [
         ['OS=="linux"', {
           'sources/': [
             ['exclude', 'host/foreign_window_host.cc'],
-            ['exclude', 'host/root_window_host_factory.cc'],
+            ['exclude', 'host/foreign_window_manager_host.cc'],
           ],
           'link_settings': {
             'libraries': [

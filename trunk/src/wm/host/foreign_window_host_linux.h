@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef WM_FOREIGN_WINDOW_HOST_LINUX_H_
-#define WM_FOREIGN_WINDOW_HOST_LINUX_H_
+#ifndef WM_HOST_FOREIGN_WINDOW_HOST_LINUX_H_
+#define WM_HOST_FOREIGN_WINDOW_HOST_LINUX_H_
 
 #include <X11/Xlib.h>
 
@@ -40,4 +40,4 @@ class ForeignWindowHostLinux : public ForeignWindowHost,
 
 }  // namespace wm
 
-#endif  // WM_FOREIGN_WINDOW_HOST_LINUX_H_
+#endif  // WM_HOST_FOREIGN_WINDOW_HOST_LINUX_H_

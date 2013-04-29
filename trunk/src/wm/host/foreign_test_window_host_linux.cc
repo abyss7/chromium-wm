@@ -6,14 +6,14 @@
 
 #include "base/run_loop.h"
 #include "ui/aura/env.h"
-#include "ui/aura/root_window.h"
+#include "wm/foreign_window_manager.h"
 
 namespace wm {
 
 ForeignTestWindowHostLinux::ForeignTestWindowHostLinux(
-    aura::RootWindow* root_window)
+    ForeignWindowManager* window_manager)
     : display_(NULL),
-      parent_(root_window->GetAcceleratedWidget()),
+      parent_(window_manager->GetAcceleratedWidget()),
       window_(0),
       font_info_(NULL),
       gc_(0) {
@@ -117,8 +117,8 @@ void ForeignTestWindowHostLinux::OnFileCanWriteWithoutBlocking(int fd) {
 
 // static
 ForeignTestWindowHost* ForeignTestWindowHost::Create(
-    aura::RootWindow* root_window) {
-  return new ForeignTestWindowHostLinux(root_window);
+    ForeignWindowManager* window_manager) {
+  return new ForeignTestWindowHostLinux(window_manager);
 }
 
 // static

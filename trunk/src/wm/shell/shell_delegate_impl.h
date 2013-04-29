@@ -10,14 +10,14 @@
 
 namespace ash {
 namespace shell {
-
 class LauncherDelegateImpl;
 class WindowWatcher;
-
-}  // namespace shell
-}  // namespace ash
+}
+}
 
 namespace wm {
+class ForeignWindowManager;
+
 namespace shell {
 
 class ShellDelegateImpl : public ash::ShellDelegate {
@@ -25,6 +25,7 @@ class ShellDelegateImpl : public ash::ShellDelegate {
   ShellDelegateImpl();
   virtual ~ShellDelegateImpl();
 
+  void SetForeignWindowManager(ForeignWindowManager* foreign_window_manager);
   void SetWatcher(ash::shell::WindowWatcher* watcher);
 
   virtual bool IsFirstRunAfterBoot() const OVERRIDE;
@@ -81,6 +82,8 @@ class ShellDelegateImpl : public ash::ShellDelegate {
   virtual string16 GetProductName() const OVERRIDE;
 
  private:
+  ForeignWindowManager* foreign_window_manager_;
+
   // Used to update Launcher. Owned by main.
   ash::shell::WindowWatcher* watcher_;
 

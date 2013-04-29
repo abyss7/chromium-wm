@@ -65,12 +65,13 @@ void SyncCompleted(base::RunLoop* run_loop) {
 
 }  // namespace
 
-ForeignTestWindow::CreateParams::CreateParams(aura::RootWindow* root_window)
-    : root_window(root_window) {
+ForeignTestWindow::CreateParams::CreateParams(
+    ForeignWindowManager* window_manager)
+    : window_manager(window_manager) {
 }
 
 ForeignTestWindow::ForeignTestWindow(const CreateParams& params) {
-  host_ = ForeignTestWindowHost::Create(params.root_window);
+  host_ = ForeignTestWindowHost::Create(params.window_manager);
   g_foreign_test_window_thread.Pointer()->message_loop_proxy()->PostTask(
       FROM_HERE,
       base::Bind(&InitializeOnIO, host_));

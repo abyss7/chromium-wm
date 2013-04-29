@@ -16,6 +16,7 @@
 #include "ui/message_center/message_center.h"
 #endif
 #include "wm/foreign_test_window.h"
+#include "wm/foreign_window_manager.h"
 #include "wm/gpu/foreign_window_texture_factory.h"
 #include "wm/host/foreign_test_window_host.h"
 #include "wm/test/test_shell_delegate.h"
@@ -45,11 +46,17 @@ void WmTestBase::SetUp() {
   // Creates Shell and hook with Desktop.
   TestShellDelegate* delegate = new TestShellDelegate;
 
+  // Create the WM.
+  foreign_window_manager_.reset(new ForeignWindowManager);
+  foreign_window_manager_->InitializeForTesting();
+  delegate->SetForeignWindowManager(foreign_window_manager_.get());
+
 #if defined(ENABLE_MESSAGE_CENTER)
   // Creates MessageCenter since g_browser_process is not created in WmTestBase
   // tests.
   message_center::MessageCenter::Initialize();
 #endif
+
   ash::Shell::CreateInstance(delegate);
   ash::Shell::GetPrimaryRootWindow()->Show();
   ash::Shell::GetPrimaryRootWindow()->ShowRootWindow();
@@ -70,6 +77,9 @@ void WmTestBase::TearDown() {
   // Remove global message center state.
   message_center::MessageCenter::Shutdown();
 #endif
+
+  // Destroy the WM.
+  foreign_window_manager_.reset();
 
   aura::Env::DeleteInstance();
   ui::TextInputTestSupport::Shutdown();

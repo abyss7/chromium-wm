@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef WM_SHELL_CONTENT_CLIENT_EXAMPLES_BROWSER_MAIN_PARTS_H_
-#define WM_SHELL_CONTENT_CLIENT_EXAMPLES_BROWSER_MAIN_PARTS_H_
+#ifndef WM_SHELL_CONTENT_CLIENT_SHELL_BROWSER_MAIN_PARTS_H_
+#define WM_SHELL_CONTENT_CLIENT_SHELL_BROWSER_MAIN_PARTS_H_
 
 #include "base/basictypes.h"
 #include "base/memory/scoped_ptr.h"
@@ -22,6 +22,7 @@ class WindowWatcher;
 
 namespace wm {
 class ForeignTestWindow;
+class ForeignWindowManager;
 
 namespace shell {
 
@@ -44,6 +45,7 @@ class ShellBrowserMainParts : public content::BrowserMainParts {
 
  private:
   scoped_ptr<content::ShellBrowserContext> browser_context_;
+  scoped_ptr<wm::ForeignWindowManager> foreign_window_manager_;
   scoped_ptr<ash::shell::WindowWatcher> window_watcher_;
   scoped_ptr<wm::ForeignTestWindow> foreign_test_window_;
 
@@ -53,4 +55,4 @@ class ShellBrowserMainParts : public content::BrowserMainParts {
 }  // namespace shell
 }  // namespace wm
 
-#endif  // WM_SHELL_CONTENT_CLIENT_EXAMPLES_BROWSER_MAIN_PARTS_H_
+#endif  // WM_SHELL_CONTENT_CLIENT_SHELL_BROWSER_MAIN_PARTS_H_

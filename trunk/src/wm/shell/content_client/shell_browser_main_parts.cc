@@ -5,6 +5,7 @@
 #include "wm/shell/content_client/shell_browser_main_parts.h"
 
 #include "ash/desktop_background/desktop_background_controller.h"
+#include "ash/display/display_controller.h"
 #include "ash/shell.h"
 #include "ash/shell/window_watcher.h"
 #include "content/shell/shell_browser_context.h"
@@ -13,6 +14,7 @@
 #include "ui/base/resource/resource_bundle.h"
 #include "ui/views/test/test_views_delegate.h"
 #include "wm/foreign_test_window.h"
+#include "wm/foreign_window_manager.h"
 #include "wm/gpu/foreign_window_texture_factory.h"
 #include "wm/shell/shell_delegate_impl.h"
 
@@ -89,6 +91,11 @@ void ShellBrowserMainParts::PreMainMessageLoopRun() {
     views::ViewsDelegate::views_delegate = new ShellViewsDelegate;
 
   wm::shell::ShellDelegateImpl* delegate = new wm::shell::ShellDelegateImpl;
+
+  foreign_window_manager_.reset(new ForeignWindowManager);
+  foreign_window_manager_->InitializeForTesting();
+  delegate->SetForeignWindowManager(foreign_window_manager_.get());
+
 #if defined(ENABLE_MESSAGE_CENTER)
   // The global message center state must be initialized absent
   // g_browser_process.
@@ -109,7 +116,11 @@ void ShellBrowserMainParts::PreMainMessageLoopRun() {
   else
     controller->SetDefaultWallpaper(ash::kDefaultSmallWallpaper);
 
-  ForeignTestWindow::CreateParams params(ash::Shell::GetPrimaryRootWindow());
+  foreign_window_manager_->SetDisplay(
+      ash::DisplayController::GetPrimaryDisplay());
+  foreign_window_manager_->SetDefaultCursor(ui::kCursorPointer);
+
+  ForeignTestWindow::CreateParams params(foreign_window_manager_.get());
   foreign_test_window_.reset(new ForeignTestWindow(params));
   foreign_test_window_->Show();
 
@@ -125,6 +136,7 @@ void ShellBrowserMainParts::PostMainMessageLoopRun() {
   // g_browser_process.
   message_center::MessageCenter::Shutdown();
 #endif
+  foreign_window_manager_.reset();
   aura::Env::DeleteInstance();
   ForeignWindowTextureFactory::Terminate();
 }

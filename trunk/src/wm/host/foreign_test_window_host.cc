@@ -27,7 +27,7 @@ class ForeignTestWindowHostImpl : public ForeignTestWindowHost {
 
 // static
 ForeignTestWindowHost* ForeignTestWindowHost::Create(
-    aura::RootWindow* root_window) {
+    ForeignWindowManager* window_manager) {
   return new ForeignTestWindowHostImpl();
 }
 
