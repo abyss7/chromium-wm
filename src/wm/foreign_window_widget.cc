@@ -19,8 +19,7 @@ ForeignWindowWidget::ForeignWindowWidget(ForeignWindow* foreign_window)
     : foreign_window_(foreign_window) {
   views::Widget::InitParams params(views::Widget::InitParams::TYPE_WINDOW);
   params.delegate = foreign_window->CreateWidgetDelegate();
-  // TODO(reveman): Add support for multiple root windows.
-  params.context = ash::Shell::GetAllRootWindows()[0];
+  params.context = ash::Shell::GetActiveRootWindow();
   Init(params);
   set_focus_on_creation(false);
   GetNativeView()->SetName("ForeignWindowWidget");
