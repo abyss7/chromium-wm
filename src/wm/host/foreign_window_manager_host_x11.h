@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef WM_HOST_FOREIGN_WINDOW_MANAGER_HOST_LINUX_H_
-#define WM_HOST_FOREIGN_WINDOW_MANAGER_HOST_LINUX_H_
+#ifndef WM_HOST_FOREIGN_WINDOW_MANAGER_HOST_X11_H_
+#define WM_HOST_FOREIGN_WINDOW_MANAGER_HOST_X11_H_
 
 #include <X11/Xlib.h>
 
@@ -23,15 +23,15 @@
 namespace wm {
 class ForeignWindow;
 
-class ForeignWindowManagerHostLinux
+class ForeignWindowManagerHostX11
     : public ForeignWindowManagerHost,
       public aura::EnvObserver,
       public aura::WindowObserver,
       public MessageLoop::Dispatcher,
-      public base::SupportsWeakPtr<ForeignWindowManagerHostLinux> {
+      public base::SupportsWeakPtr<ForeignWindowManagerHostX11> {
  public:
-  ForeignWindowManagerHostLinux();
-  virtual ~ForeignWindowManagerHostLinux();
+  ForeignWindowManagerHostX11();
+  virtual ~ForeignWindowManagerHostX11();
 
   // Overridden from ForeignWindowManagerHost:
   virtual bool Initialize() OVERRIDE;
@@ -98,9 +98,9 @@ class ForeignWindowManagerHostLinux
 
   ui::X11AtomCache atom_cache_;
 
-  DISALLOW_COPY_AND_ASSIGN(ForeignWindowManagerHostLinux);
+  DISALLOW_COPY_AND_ASSIGN(ForeignWindowManagerHostX11);
 };
 
 }  // namespace wm
 
-#endif  // WM_HOST_FOREIGN_WINDOW_MANAGER_HOST_LINUX_H_
+#endif  // WM_HOST_FOREIGN_WINDOW_MANAGER_HOST_X11_H_
