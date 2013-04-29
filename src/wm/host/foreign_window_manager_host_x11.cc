@@ -4,9 +4,9 @@
 
 #include "wm/host/foreign_window_manager_host_x11.h"
 
+#include <X11/Xatom.h>
 #include <X11/extensions/Xcomposite.h>
 #include <X11/extensions/shape.h>
-#include <X11/Xatom.h>
 
 #include <string>
 #include <vector>
@@ -489,7 +489,7 @@ void ForeignWindowManagerHostX11::RecursiveConfigure(
     DCHECK(!bounds.IsEmpty());
 
     // We should only be adjusting attributes of managed windows.
-    if (foreign_window->IsManaged()) {
+    if (foreign_window->IsManaged() && !foreign_window->HasBeenDestroyed()) {
       if (!window->IsVisible())
         UnmapWindowIfNeeded(foreign_window);
 
