@@ -38,6 +38,7 @@ void ForeignTestWindowHostX11::Initialize() {
   gc_ = XCreateGC(display_, window_, 0, NULL);
   XSetFont(display_, gc_, font_info_->fid);
   XSetForeground(display_, gc_, BlackPixel(display_, DefaultScreen(display_)));
+  XFlush(display_);
 
   MessageLoopForIO::current()->WatchFileDescriptor(
       ConnectionNumber(display_), true, MessageLoopForIO::WATCH_READ,
@@ -57,15 +58,18 @@ void ForeignTestWindowHostX11::Delete() {
 void ForeignTestWindowHostX11::Show() {
   DCHECK(window_);
   XMapWindow(display_, window_);
+  XFlush(display_);
 }
 
 void ForeignTestWindowHostX11::Hide() {
   DCHECK(window_);
   XUnmapWindow(display_, window_);
+  XFlush(display_);
 }
 
 void ForeignTestWindowHostX11::Destroy() {
   XDestroyWindow(display_, window_);
+  XFlush(display_);
   window_ = 0;
 }
 
@@ -93,10 +97,13 @@ void ForeignTestWindowHostX11::ProcessXEvent(XEvent *event) {
                   gc_,
                   msg_x, msg_y,
                   message.c_str(), message.length());
-    } break;
+      XFlush(display_);
+      break;
+    }
     case ConfigureNotify: {
       size_ = gfx::Size(event->xconfigure.width, event->xconfigure.height);
-    } break;
+      break;
+    }
   }
 }
 
