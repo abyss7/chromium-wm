@@ -13,7 +13,7 @@
 #include "base/basictypes.h"
 #include "base/compiler_specific.h"
 #include "base/message_loop.h"
-#include "ui/gfx/size.h"
+#include "ui/gfx/rect.h"
 #include "wm/host/foreign_test_window_host.h"
 
 namespace wm {
@@ -22,7 +22,9 @@ class ForeignWindowManager;
 class ForeignTestWindowHostX11 : public ForeignTestWindowHost,
                                  public MessageLoopForIO::Watcher {
  public:
-  explicit ForeignTestWindowHostX11(ForeignWindowManager* window_manager);
+  ForeignTestWindowHostX11(ForeignWindowManager* window_manager,
+                           const gfx::Rect& bounds,
+                           bool managed);
 
   // This is guaranteed to run all tasks up to the last Sync() call.
   static void RunAllPendingInMessageLoop();
@@ -34,6 +36,7 @@ class ForeignTestWindowHostX11 : public ForeignTestWindowHost,
   virtual void Hide() OVERRIDE;
   virtual void Destroy() OVERRIDE;
   virtual void Sync() OVERRIDE;
+  virtual void SetBounds(const gfx::Rect& bounds) OVERRIDE;
 
   // Overridden from MessageLoopForIO::Watcher:
   virtual void OnFileCanReadWithoutBlocking(int fd) OVERRIDE;
@@ -50,7 +53,8 @@ class ForeignTestWindowHostX11 : public ForeignTestWindowHost,
   Display* display_;
   ::Window parent_;
   ::Window window_;
-  gfx::Size size_;
+  gfx::Rect bounds_;
+  bool managed_;
   XFontStruct* font_info_;
   ::GC gc_;
 

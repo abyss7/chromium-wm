@@ -96,11 +96,6 @@ gfx::Vector2d GetTargetOffsetInRootWindow(const aura::Window* window) {
   return offset;
 }
 
-gfx::Rect GetTargetBoundsInRootWindow(const aura::Window* window) {
-  return gfx::Rect(window->GetTargetBounds().size()) +
-      GetTargetOffsetInRootWindow(window);
-}
-
 }  // namespace
 
 ForeignWindowManagerHostX11::ForeignWindowManagerHostX11()
@@ -191,7 +186,23 @@ void ForeignWindowManagerHostX11::InitializeForTesting() {
                   PropModeReplace,
                   reinterpret_cast<unsigned char*>(&pid), 1);
 
+  // Before we map the window, set size hints. Otherwise, some window managers
+  // will ignore toplevel XMoveWindow commands.
+  XSizeHints size_hints;
+  size_hints.flags = PPosition | PWinGravity;
+  size_hints.x = bounds_.x();
+  size_hints.y = bounds_.y();
+  // Set StaticGravity so that the window position is not affected by the
+  // frame width when running with window manager.
+  size_hints.win_gravity = StaticGravity;
+  XSetWMNormalHints(xdisplay_, xwindow_, &size_hints);
+
   XMapWindow(xdisplay_, xwindow_);
+
+  // We now block until our window is mapped. Some X11 APIs will crash and
+  // burn if passed |xwindow_| before the window is mapped, and XMapWindow is
+  // asynchronous.
+  base::MessagePumpAuraX11::Current()->BlockUntilWindowMapped(xwindow_);
 }
 
 aura::RootWindowHost* ForeignWindowManagerHostX11::CreateRootWindowHost(
@@ -265,9 +276,18 @@ bool ForeignWindowManagerHostX11::Dispatch(const base::NativeEvent& event) {
         ForeignWindow* window = it->second;
 
         int border_size = event->xconfigure.border_width * 2;
-        gfx::Size size(event->xconfigure.width + border_size,
-                       event->xconfigure.height + border_size);
-        window->OnWindowSizeChanged(size);
+        gfx::Rect bounds(event->xconfigure.x,
+                         event->xconfigure.y,
+                         event->xconfigure.width + border_size,
+                         event->xconfigure.height + border_size);
+
+        if (!window->IsManaged()) {
+          views::Widget* widget = window->GetWidget();
+          DCHECK(widget);
+          widget->SetBounds(bounds);
+        }
+
+        window->OnWindowSizeChanged(bounds.size());
         return true;
       }
       break;
@@ -277,6 +297,12 @@ bool ForeignWindowManagerHostX11::Dispatch(const base::NativeEvent& event) {
           event->xmap.window);
       if (it != foreign_windows_.end()) {
         ForeignWindow* window = it->second;
+
+        if (!window->IsManaged()) {
+          views::Widget* widget = window->GetWidget();
+          DCHECK(widget);
+          widget->Show();
+        }
 
         window->OnWindowVisibilityChanged(true);
         return true;
@@ -301,8 +327,10 @@ bool ForeignWindowManagerHostX11::Dispatch(const base::NativeEvent& event) {
     }
     case CreateNotify: {
       int border_size = event->xcreatewindow.border_width * 2;
-      gfx::Size size(event->xcreatewindow.width + border_size,
-                     event->xcreatewindow.height + border_size);
+      gfx::Rect bounds(event->xcreatewindow.x,
+                       event->xcreatewindow.y,
+                       event->xcreatewindow.width + border_size,
+                       event->xcreatewindow.height + border_size);
 
       // Ignore native root windows.
       WindowMap::iterator it = root_windows_.find(event->xcreatewindow.window);
@@ -310,11 +338,19 @@ bool ForeignWindowManagerHostX11::Dispatch(const base::NativeEvent& event) {
         return true;
 
       // Create a foreign window for this X window.
-      ForeignWindow::CreateParams params(event->xcreatewindow.window, size);
+      ForeignWindow::CreateParams params(
+          event->xcreatewindow.window, bounds.size());
+      params.managed = !event->xcreatewindow.override_redirect;
       scoped_refptr<ForeignWindow> window(new ForeignWindow(params));
 
       // Create top level window widget.
       ForeignWindowWidget::CreateWindow(window.get());
+
+      if (!window->IsManaged()) {
+        views::Widget* widget = window->GetWidget();
+        DCHECK(widget);
+        widget->SetBounds(bounds);
+      }
 
       // Add foreign window to map.
       foreign_windows_[event->xcreatewindow.window] = window.get();
@@ -343,6 +379,8 @@ bool ForeignWindowManagerHostX11::Dispatch(const base::NativeEvent& event) {
           event->xmaprequest.window);
       if (it != foreign_windows_.end()) {
         ForeignWindow* window = it->second;
+
+        DCHECK(window->IsManaged());
 
         // Show top level widget.
         views::Widget* widget = window->GetWidget();

@@ -58,6 +58,10 @@ void WmTestBase::SetUp() {
 #endif
 
   ash::Shell::CreateInstance(delegate);
+
+  foreign_window_manager_->CreateContainers(
+      ash::Shell::GetPrimaryRootWindow());
+
   ash::Shell::GetPrimaryRootWindow()->Show();
   ash::Shell::GetPrimaryRootWindow()->ShowRootWindow();
   // Move the mouse cursor to far away so that native events doesn't

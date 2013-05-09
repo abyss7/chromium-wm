@@ -9,6 +9,7 @@
 #include "base/callback.h"
 #include "base/compiler_specific.h"
 #include "base/memory/scoped_ptr.h"
+#include "ui/gfx/rect.h"
 
 namespace wm {
 class ForeignTestWindowHost;
@@ -21,13 +22,16 @@ class ForeignTestWindow {
     explicit CreateParams(ForeignWindowManager* window_manager);
 
     ForeignWindowManager* window_manager;
+    gfx::Rect bounds;
+    bool managed;
   };
   explicit ForeignTestWindow(const CreateParams& params);
   virtual ~ForeignTestWindow();
 
-  void Show();
-  void Hide();
   void Destroy();
+  void Hide();
+  void SetBounds(const gfx::Rect& bounds);
+  void Show();
   void Sync();
 
  private:

@@ -14,6 +14,10 @@ class ImageCursors;
 class RootWindowHostFactory;
 }
 
+namespace aura {
+class RootWindow;
+}
+
 namespace wm {
 class ForeignWindowManagerHost;
 
@@ -40,6 +44,9 @@ class ForeignWindowManager {
 
   // Sets default cursor for foreign windows.
   void SetDefaultCursor(gfx::NativeCursor cursor);
+
+  // Create containers used for unmanaged windows.
+  void CreateContainers(aura::RootWindow* root_window);
 
  private:
   scoped_ptr<ForeignWindowManagerHost> host_;

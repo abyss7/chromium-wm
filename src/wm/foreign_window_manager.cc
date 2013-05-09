@@ -6,7 +6,9 @@
 
 #include "ash/host/root_window_host_factory.h"
 #include "ash/wm/image_cursors.h"
+#include "ui/aura/root_window.h"
 #include "wm/host/foreign_window_manager_host.h"
+#include "wm/shell_window_ids.h"
 
 namespace wm {
 
@@ -72,6 +74,15 @@ void ForeignWindowManager::SetDefaultCursor(gfx::NativeCursor cursor) {
   new_cursor.set_device_scale_factor(
       image_cursors_->GetDisplay().device_scale_factor());
   host_->SetDefaultCursor(new_cursor);
+}
+
+void ForeignWindowManager::CreateContainers(aura::RootWindow* root_window) {
+  aura::Window* container = new aura::Window(NULL);
+  container->set_id(internal::kShellWindowId_UnmanagedWindowContainer);
+  container->SetName("ForeignUnmanagedWindowContainer");
+  container->Init(ui::LAYER_NOT_DRAWN);
+  root_window->AddChild(container);
+  container->Show();
 }
 
 }  // namespace wm

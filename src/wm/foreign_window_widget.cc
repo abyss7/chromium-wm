@@ -12,6 +12,7 @@
 #include "ui/views/widget/widget.h"
 #include "ui/views/widget/widget_delegate.h"
 #include "wm/foreign_window.h"
+#include "wm/shell_window_ids.h"
 
 namespace wm {
 
@@ -20,6 +21,13 @@ ForeignWindowWidget::ForeignWindowWidget(ForeignWindow* foreign_window)
   views::Widget::InitParams params(views::Widget::InitParams::TYPE_WINDOW);
   params.delegate = foreign_window->CreateWidgetDelegate();
   params.context = ash::Shell::GetActiveRootWindow();
+  params.can_activate = foreign_window->IsManaged();
+  if (!foreign_window->IsManaged()) {
+    params.parent = ash::Shell::GetContainer(
+        ash::Shell::GetActiveRootWindow(),
+        internal::kShellWindowId_UnmanagedWindowContainer);
+    DCHECK(params.parent);
+  }
   Init(params);
   set_focus_on_creation(false);
   GetNativeView()->SetName("ForeignWindowWidget");

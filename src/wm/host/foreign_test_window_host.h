@@ -5,6 +5,10 @@
 #ifndef WM_HOST_FOREIGN_TEST_WINDOW_HOST_H_
 #define WM_HOST_FOREIGN_TEST_WINDOW_HOST_H_
 
+namespace gfx {
+class Rect;
+}
+
 namespace wm {
 class ForeignWindowManager;
 
@@ -14,7 +18,10 @@ class ForeignTestWindowHost {
 
   // Creates a new ForeignTestWindowHost. Caller owns return value and must
   // call Destroy() to delete instance.
-  static ForeignTestWindowHost* Create(ForeignWindowManager* window_manager);
+  static ForeignTestWindowHost* Create(
+      ForeignWindowManager* window_manager,
+      const gfx::Rect& bounds,
+      bool managed);
 
   // This is guaranteed to run all tasks up to the last Sync() call.
   static void RunAllPendingInMessageLoop();
@@ -26,6 +33,7 @@ class ForeignTestWindowHost {
   virtual void Hide() = 0;
   virtual void Destroy() = 0;
   virtual void Sync() = 0;
+  virtual void SetBounds(const gfx::Rect& bounds) = 0;
 };
 
 }  // namespace wm
