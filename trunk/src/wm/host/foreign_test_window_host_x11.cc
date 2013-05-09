@@ -11,10 +11,14 @@
 namespace wm {
 
 ForeignTestWindowHostX11::ForeignTestWindowHostX11(
-    ForeignWindowManager* window_manager)
+    ForeignWindowManager* window_manager,
+    const gfx::Rect& bounds,
+    bool managed)
     : display_(NULL),
       parent_(window_manager->GetAcceleratedWidget()),
       window_(0),
+      bounds_(bounds),
+      managed_(managed),
       font_info_(NULL),
       gc_(0) {
 }
@@ -25,20 +29,25 @@ ForeignTestWindowHostX11::~ForeignTestWindowHostX11() {
 void ForeignTestWindowHostX11::Initialize() {
   DCHECK(parent_);
   display_ = XOpenDisplay(NULL);
-  size_ = gfx::Size(300, 300);
-  window_ = XCreateSimpleWindow(
+  XSetWindowAttributes swa;
+  memset(&swa, 0, sizeof(swa));
+  swa.background_pixel = WhitePixel(display_, DefaultScreen(display_));
+  swa.override_redirect = !managed_;
+  window_ = XCreateWindow(
       display_,
       parent_,
-      30, 30, size_.width(), size_.height(), 0,
-      BlackPixel(display_, DefaultScreen(display_)),
-      WhitePixel(display_, DefaultScreen(display_)));
+      bounds_.x(), bounds_.y(), bounds_.width(), bounds_.height(), 0,
+      CopyFromParent,
+      InputOutput,
+      CopyFromParent,
+      CWBackPixel | CWOverrideRedirect,
+      &swa);
   XSelectInput(display_, window_, ExposureMask | StructureNotifyMask);
   font_info_ = XLoadQueryFont(display_, "9x15");
   DCHECK(font_info_);
   gc_ = XCreateGC(display_, window_, 0, NULL);
   XSetFont(display_, gc_, font_info_->fid);
   XSetForeground(display_, gc_, BlackPixel(display_, DefaultScreen(display_)));
-  XFlush(display_);
 
   MessageLoopForIO::current()->WatchFileDescriptor(
       ConnectionNumber(display_), true, MessageLoopForIO::WATCH_READ,
@@ -68,6 +77,7 @@ void ForeignTestWindowHostX11::Hide() {
 }
 
 void ForeignTestWindowHostX11::Destroy() {
+  DCHECK(window_);
   XDestroyWindow(display_, window_);
   XFlush(display_);
   window_ = 0;
@@ -75,6 +85,16 @@ void ForeignTestWindowHostX11::Destroy() {
 
 void ForeignTestWindowHostX11::Sync() {
   XSync(display_, False);
+}
+
+void ForeignTestWindowHostX11::SetBounds(const gfx::Rect& bounds) {
+  XMoveResizeWindow(display_,
+                    window_,
+                    bounds.x(),
+                    bounds.y(),
+                    bounds.width(),
+                    bounds.height());
+  XFlush(display_);
 }
 
 void ForeignTestWindowHostX11::ProcessXEvent(XEvent *event) {
@@ -87,21 +107,23 @@ void ForeignTestWindowHostX11::ProcessXEvent(XEvent *event) {
 
       // Center text.
       int width = XTextWidth(font_info_, message.c_str(), message.length());
-      int msg_x  = (size_.width() - width) / 2;
+      int msg_x  = (bounds_.width() - width) / 2;
 
       int font_height = font_info_->ascent + font_info_->descent;
-      int msg_y  = (size_.height() + font_height) / 2;
+      int msg_y  = (bounds_.height() + font_height) / 2;
 
       XDrawString(display_,
                   window_,
                   gc_,
                   msg_x, msg_y,
                   message.c_str(), message.length());
-      XFlush(display_);
       break;
     }
     case ConfigureNotify: {
-      size_ = gfx::Size(event->xconfigure.width, event->xconfigure.height);
+      bounds_ = gfx::Rect(event->xconfigure.x,
+                          event->xconfigure.y,
+                          event->xconfigure.width,
+                          event->xconfigure.height);
       break;
     }
   }
@@ -113,6 +135,7 @@ void ForeignTestWindowHostX11::PumpXEvents() {
     XNextEvent(display_, &event);
     ProcessXEvent(&event);
   }
+  XFlush(display_);
 }
 
 void ForeignTestWindowHostX11::OnFileCanReadWithoutBlocking(int fd) {

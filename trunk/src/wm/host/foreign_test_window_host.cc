@@ -21,13 +21,16 @@ class ForeignTestWindowHostImpl : public ForeignTestWindowHost {
   virtual void Hide() OVERRIDE {}
   virtual void Destroy() OVERRIDE {}
   virtual void Sync() OVERRIDE {}
+  virtual void SetBounds(const gfx::Rect& bounds) OVERRIDE {}
 };
 
 }  // namespace
 
 // static
 ForeignTestWindowHost* ForeignTestWindowHost::Create(
-    ForeignWindowManager* window_manager) {
+    ForeignWindowManager* window_manager,
+    const gfx::Rect& bounds,
+    bool managed) {
   return new ForeignTestWindowHostImpl();
 }
 

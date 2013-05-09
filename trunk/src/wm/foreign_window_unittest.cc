@@ -62,16 +62,70 @@ TEST_F(ForeignWindowTest, IsVisible) {
   aura::WindowTracker tracker;
   AddForeignWindowsToWindowTracker(
       ash::Shell::GetPrimaryRootWindow(), tracker);
-  EXPECT_EQ(1u, tracker.windows().size());
-  EXPECT_FALSE((*tracker.windows().begin())->IsVisible());
+  ASSERT_EQ(1u, tracker.windows().size());
+  aura::Window* window = *tracker.windows().begin();
+  EXPECT_FALSE(window->IsVisible());
   test_window->Show();
   test_window->Sync();
   RunAllPendingInMessageLoop();
-  EXPECT_TRUE((*tracker.windows().begin())->IsVisible());
+  EXPECT_TRUE(window->IsVisible());
   test_window->Hide();
   test_window->Sync();
   RunAllPendingInMessageLoop();
-  EXPECT_FALSE((*tracker.windows().begin())->IsVisible());
+  EXPECT_FALSE(window->IsVisible());
+}
+
+// Test handling of unmanaged windows.
+TEST_F(ForeignWindowTest, Unmanaged) {
+  gfx::Rect initial_bounds(10, 10, 200, 50);
+  ForeignTestWindow::CreateParams params(foreign_window_manager());
+  params.bounds = initial_bounds;
+  params.managed = false;
+  scoped_ptr<ForeignTestWindow> test_window(new ForeignTestWindow(params));
+  test_window->Show();
+  test_window->Sync();
+  RunAllPendingInMessageLoop();
+  aura::WindowTracker tracker;
+  AddForeignWindowsToWindowTracker(
+      ash::Shell::GetPrimaryRootWindow(), tracker);
+  ASSERT_EQ(1u, tracker.windows().size());
+  aura::Window* window = *tracker.windows().begin();
+  EXPECT_TRUE(window->IsVisible());
+  // Bounds should match initial bounds.
+  EXPECT_EQ(initial_bounds.ToString(),
+            window->GetBoundsInRootWindow().ToString());
+  // Check if window movement is handled correctly.
+  gfx::Point new_origin(100, 100);
+  test_window->SetBounds(gfx::Rect(new_origin, initial_bounds.size()));
+  test_window->Sync();
+  RunAllPendingInMessageLoop();
+  EXPECT_EQ(new_origin.ToString(),
+            window->GetBoundsInRootWindow().origin().ToString());
+  // Test simultaneous move and resize.
+  gfx::Rect new_bounds(50, 50, 50, 50);
+  test_window->SetBounds(new_bounds);
+  test_window->Sync();
+  RunAllPendingInMessageLoop();
+  EXPECT_EQ(new_bounds.ToString(),
+            window->GetBoundsInRootWindow().ToString());
+  // Check if offscreen bounds are handled correctly.
+  gfx::Rect offscreen_bounds(-100, -100, 75, 75);
+  test_window->SetBounds(offscreen_bounds);
+  test_window->Sync();
+  RunAllPendingInMessageLoop();
+  EXPECT_EQ(offscreen_bounds.ToString(),
+            window->GetBoundsInRootWindow().ToString());
+  // And partially offscreen bounds.
+  gfx::Rect partial_offscreen_bounds(-25, -25, 75, 75);
+  test_window->SetBounds(partial_offscreen_bounds);
+  test_window->Sync();
+  RunAllPendingInMessageLoop();
+  EXPECT_EQ(partial_offscreen_bounds.ToString(),
+            window->GetBoundsInRootWindow().ToString());
+  test_window->Hide();
+  test_window->Sync();
+  RunAllPendingInMessageLoop();
+  EXPECT_FALSE(window->IsVisible());
 }
 
 }  // namespace test

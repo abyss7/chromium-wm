@@ -120,9 +120,22 @@ void ShellBrowserMainParts::PreMainMessageLoopRun() {
       ash::DisplayController::GetPrimaryDisplay());
   foreign_window_manager_->SetDefaultCursor(ui::kCursorPointer);
 
+  // TODO(reveman): Properly integrate with
+  // ash::RootWindowController::CreateContainers.
+  foreign_window_manager_->CreateContainers(
+      ash::Shell::GetPrimaryRootWindow());
+
   ForeignTestWindow::CreateParams params(foreign_window_manager_.get());
   foreign_test_window_.reset(new ForeignTestWindow(params));
   foreign_test_window_->Show();
+
+  ForeignTestWindow::CreateParams unmanaged_params(
+      foreign_window_manager_.get());
+  unmanaged_params.bounds = gfx::Rect(10, 10, 300, 200);
+  unmanaged_params.managed = false;
+  unmanaged_foreign_test_window_.reset(
+      new ForeignTestWindow(unmanaged_params));
+  unmanaged_foreign_test_window_->Show();
 
   ash::Shell::GetPrimaryRootWindow()->ShowRootWindow();
 }

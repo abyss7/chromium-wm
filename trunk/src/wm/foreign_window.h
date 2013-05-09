@@ -32,6 +32,7 @@ class ForeignWindow : public base::RefCounted<ForeignWindow>,
 
     gfx::PluginWindowHandle window_handle;
     gfx::Size preferred_size;
+    bool managed;
   };
   explicit ForeignWindow(const CreateParams& params);
 
@@ -48,6 +49,8 @@ class ForeignWindow : public base::RefCounted<ForeignWindow>,
   virtual views::Widget* GetWidget() OVERRIDE;
   virtual const views::Widget* GetWidget() const OVERRIDE;
   virtual views::ClientView* CreateClientView(views::Widget* widget) OVERRIDE;
+  virtual views::NonClientFrameView* CreateNonClientFrameView(
+      views::Widget* widget) OVERRIDE;
   virtual void DeleteDelegate() OVERRIDE;
   virtual bool CanResize() const OVERRIDE;
   virtual bool CanMaximize() const OVERRIDE;
@@ -90,6 +93,7 @@ class ForeignWindow : public base::RefCounted<ForeignWindow>,
 
   scoped_ptr<ForeignWindowHost> host_;
   gfx::Size preferred_size_;
+  bool managed_;
   base::WeakPtr<ForeignWindowClientView> client_view_;
   DisplayState display_state_;
   bool destroyed_;

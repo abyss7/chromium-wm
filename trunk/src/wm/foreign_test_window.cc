@@ -63,15 +63,24 @@ void SyncCompleted(base::RunLoop* run_loop) {
   run_loop->Quit();
 }
 
+void SetBoundsOnIO(ForeignTestWindowHost* host, const gfx::Rect& bounds) {
+  host->SetBounds(bounds);
+}
+
 }  // namespace
 
 ForeignTestWindow::CreateParams::CreateParams(
     ForeignWindowManager* window_manager)
-    : window_manager(window_manager) {
+    : window_manager(window_manager),
+      bounds(gfx::Rect(50, 50, 400, 300)),
+      managed(true) {
 }
 
 ForeignTestWindow::ForeignTestWindow(const CreateParams& params) {
-  host_ = ForeignTestWindowHost::Create(params.window_manager);
+  host_ = ForeignTestWindowHost::Create(
+      params.window_manager,
+      params.bounds,
+      params.managed);
   g_foreign_test_window_thread.Pointer()->message_loop_proxy()->PostTask(
       FROM_HERE,
       base::Bind(&InitializeOnIO, host_));
@@ -109,6 +118,12 @@ void ForeignTestWindow::Sync() {
                        base::Bind(&SyncCompleted,
                                   base::Unretained(&run_loop)));
   run_loop.Run();
+}
+
+void ForeignTestWindow::SetBounds(const gfx::Rect& bounds) {
+  g_foreign_test_window_thread.Pointer()->message_loop_proxy()->PostTask(
+      FROM_HERE,
+      base::Bind(&SetBoundsOnIO, host_, bounds));
 }
 
 }  // namespace wm

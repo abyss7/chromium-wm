@@ -8,8 +8,10 @@ namespace wm {
 
 // static
 ForeignTestWindowHost* ForeignTestWindowHost::Create(
-    ForeignWindowManager* window_manager) {
-  return new ForeignTestWindowHostX11(window_manager);
+    ForeignWindowManager* window_manager,
+    const gfx::Rect& bounds,
+    bool managed) {
+  return new ForeignTestWindowHostX11(window_manager, bounds, managed);
 }
 
 // static

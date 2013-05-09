@@ -4,6 +4,7 @@
 
 #include "wm/foreign_window.h"
 
+#include "ash/wm/panels/panel_frame_view.h"
 #include "ui/aura/window.h"
 #include "ui/aura/window_property.h"
 #include "ui/views/widget/widget.h"
@@ -30,13 +31,15 @@ ForeignWindow::CreateParams::CreateParams(
     gfx::PluginWindowHandle a_window_handle,
     gfx::Size a_preferred_size)
     : window_handle(a_window_handle),
-      preferred_size(a_preferred_size) {
+      preferred_size(a_preferred_size),
+      managed(false) {
 }
 
 ForeignWindow::ForeignWindow(const CreateParams& params)
     : ALLOW_THIS_IN_INITIALIZER_LIST(
         host_(CreateHost(this, params.window_handle))),
       preferred_size_(params.preferred_size),
+      managed_(params.managed),
       display_state_(DISPLAY_WITHDRAWN),
       destroyed_(false) {
 }
@@ -74,6 +77,14 @@ views::ClientView* ForeignWindow::CreateClientView(views::Widget* widget) {
   return client_view;
 }
 
+views::NonClientFrameView* ForeignWindow::CreateNonClientFrameView(
+    views::Widget* widget) {
+  return new ash::PanelFrameView(widget,
+                                 managed_ ?
+                                 ash::PanelFrameView::FRAME_ASH :
+                                 ash::PanelFrameView::FRAME_NONE);
+}
+
 views::Widget* ForeignWindow::GetWidget() {
   if (!client_view_)
     return NULL;
@@ -102,7 +113,7 @@ bool ForeignWindow::CanMaximize() const {
 }
 
 bool ForeignWindow::CanActivate() const {
-  return true;
+  return managed_;
 }
 
 void ForeignWindow::Close() {
@@ -129,7 +140,7 @@ ForeignWindow::DisplayState ForeignWindow::GetDisplayState() const {
 }
 
 bool ForeignWindow::IsManaged() const {
-  return true;
+  return managed_;
 }
 
 bool ForeignWindow::HasBeenDestroyed() const {
