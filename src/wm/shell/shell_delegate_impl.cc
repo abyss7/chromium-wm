@@ -18,6 +18,7 @@
 #include "ui/keyboard/keyboard_controller_proxy.h"
 #include "ui/views/corewm/input_method_event_filter.h"
 #include "wm/foreign_window_manager.h"
+#include "wm/host/foreign_window_manager_host.h"
 
 namespace wm {
 
@@ -83,9 +84,11 @@ bool ShellDelegateImpl::IsRunningInForcedAppMode() const {
 }
 
 void ShellDelegateImpl::PreInit() {
+  ForeignWindowManagerHost::SetX11ErrorHandlers();
 }
 
 void ShellDelegateImpl::Shutdown() {
+  ForeignWindowManagerHost::UnsetX11ErrorHandlers();
 }
 
 void ShellDelegateImpl::Exit() {

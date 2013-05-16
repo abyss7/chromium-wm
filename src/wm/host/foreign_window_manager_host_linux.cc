@@ -11,4 +11,14 @@ ForeignWindowManagerHost* ForeignWindowManagerHost::Create() {
   return new ForeignWindowManagerHostX11;
 }
 
+// static
+void ForeignWindowManagerHost::SetX11ErrorHandlers() {
+  ForeignWindowManagerHostX11::SetX11ErrorHandlers();
+}
+
+// static
+void ForeignWindowManagerHost::UnsetX11ErrorHandlers() {
+  ForeignWindowManagerHostX11::UnsetX11ErrorHandlers();
+}
+
 }  // namespace wm

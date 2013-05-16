@@ -32,6 +32,10 @@ class ForeignWindowManagerHost {
   // Creates a new ForeignWindowManagerHost. The caller owns the returned
   // value.
   static ForeignWindowManagerHost* Create();
+
+  // Set X11 error handlers.
+  static void SetX11ErrorHandlers();
+  static void UnsetX11ErrorHandlers();
 };
 
 }  // namespace wm

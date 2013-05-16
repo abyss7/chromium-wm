@@ -8,6 +8,7 @@
 #include <X11/extensions/Xcomposite.h>
 #include <X11/extensions/shape.h>
 
+#include <queue>
 #include <string>
 #include <vector>
 
@@ -17,6 +18,7 @@
 #include "ash/shell_delegate.h"
 #include "base/bind.h"
 #include "base/command_line.h"
+#include "base/lazy_instance.h"
 #include "base/strings/string_split.h"
 #include "ui/aura/env.h"
 #include "ui/aura/root_window.h"
@@ -45,6 +47,44 @@ class RootWindowHostImpl : public aura::RootWindowHostX11 {
  private:
   DISALLOW_COPY_AND_ASSIGN(RootWindowHostImpl);
 };
+
+typedef int(*X11ErrorHandler)(Display*, XErrorEvent*);
+typedef int(*X11IOErrorHandler)(Display*);
+
+X11ErrorHandler g_base_x11_error_handler = NULL;
+X11IOErrorHandler g_base_x11_io_error_handler = NULL;
+
+typedef std::queue<unsigned long> SequenceQueue;
+base::LazyInstance<SequenceQueue> g_x11_errors_to_ignore_;
+
+void DiscardXErrorsToIgnore(unsigned long serial) {
+  SequenceQueue* sequences = g_x11_errors_to_ignore_.Pointer();
+
+  // Discard passed sequences.
+  while (!sequences->empty()) {
+    if (sequences->front() >= serial)
+      break;
+    sequences->pop();
+  }
+}
+
+bool ShouldIgnoreX11Error(XErrorEvent* error) {
+  DiscardXErrorsToIgnore(error->serial);
+  SequenceQueue* sequences = g_x11_errors_to_ignore_.Pointer();
+  return !sequences->empty() && sequences->front() == error->serial;
+}
+
+int X11ErrorHandlerImpl(Display* display, XErrorEvent* error) {
+  if (ShouldIgnoreX11Error(error))
+    return 0;
+  DCHECK(g_base_x11_error_handler);
+  return (*g_base_x11_error_handler)(display, error);
+}
+
+int X11IOErrorHandlerImpl(Display* display) {
+  DCHECK(g_base_x11_io_error_handler);
+  return (*g_base_x11_io_error_handler)(display);
+}
 
 unsigned InitWindowChanges(const gfx::Rect& bounds,
                            ::Window sibling_to_stack_above,
@@ -109,6 +149,28 @@ ForeignWindowManagerHostX11::ForeignWindowManagerHostX11()
 
 ForeignWindowManagerHostX11::~ForeignWindowManagerHostX11() {
   aura::Env::GetInstance()->RemoveObserver(this);
+}
+
+// static
+void ForeignWindowManagerHostX11::SetX11ErrorHandlers() {
+  // Set up error handlers that allow some errors to be ignored.
+  g_base_x11_error_handler = XSetErrorHandler(X11ErrorHandlerImpl);
+  g_base_x11_io_error_handler = XSetIOErrorHandler(X11IOErrorHandlerImpl);
+}
+
+// static
+void ForeignWindowManagerHostX11::UnsetX11ErrorHandlers() {
+  X11ErrorHandler old_x11_error_handler = XSetErrorHandler(
+      g_base_x11_error_handler);
+  DCHECK_EQ(X11ErrorHandlerImpl, old_x11_error_handler);
+  X11IOErrorHandler old_x11_io_error_handler = XSetIOErrorHandler(
+      g_base_x11_io_error_handler);
+  DCHECK_EQ(X11IOErrorHandlerImpl, old_x11_io_error_handler);
+}
+
+// static
+void ForeignWindowManagerHostX11::IgnoreX11Error(unsigned long sequence) {
+  g_x11_errors_to_ignore_.Pointer()->push(sequence);
 }
 
 bool ForeignWindowManagerHostX11::Initialize() {
@@ -238,6 +300,8 @@ void ForeignWindowManagerHostX11::SetDefaultCursor(
 
 bool ForeignWindowManagerHostX11::Dispatch(const base::NativeEvent& event) {
   XEvent* xev = event;
+
+  DiscardXErrorsToIgnore(xev->xany.serial);
 
   switch (xev->type) {
     case ClientMessage: {
@@ -493,7 +557,7 @@ void ForeignWindowManagerHostX11::MapWindowIfNeeded(
       window->GetDisplayState();
 
   if (current_display_state != ForeignWindow::DISPLAY_NORMAL) {
-    // TODO(reveman): Ignore possible X error.
+    IgnoreX11Error(NextRequest(xdisplay_));
     XMapWindow(xdisplay_, window->GetWindowHandle());
 
     window->SetDisplayState(ForeignWindow::DISPLAY_NORMAL);
@@ -506,7 +570,7 @@ void ForeignWindowManagerHostX11::UnmapWindowIfNeeded(
       window->GetDisplayState();
 
   if (current_display_state == ForeignWindow::DISPLAY_NORMAL) {
-    // TODO(reveman): Ignore possible X error.
+    IgnoreX11Error(NextRequest(xdisplay_));
     XUnmapWindow(xdisplay_, window->GetWindowHandle());
 
     window->SetDisplayState(ForeignWindow::DISPLAY_ICONIC);
@@ -536,7 +600,7 @@ void ForeignWindowManagerHostX11::RecursiveConfigure(
       // Get rid of any borders.
       wc.border_width = 0;
       mask |= CWBorderWidth;
-      // TODO(reveman): Ignore possible X error.
+      IgnoreX11Error(NextRequest(xdisplay_));
       XConfigureWindow(xdisplay_,
                        foreign_window->GetWindowHandle(),
                        mask,

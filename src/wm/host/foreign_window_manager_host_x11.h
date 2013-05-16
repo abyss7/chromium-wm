@@ -33,6 +33,13 @@ class ForeignWindowManagerHostX11
   ForeignWindowManagerHostX11();
   virtual ~ForeignWindowManagerHostX11();
 
+  // Set X11 error handlers.
+  static void SetX11ErrorHandlers();
+  static void UnsetX11ErrorHandlers();
+
+  // Ignore any X11 errors from this sequence.
+  static void IgnoreX11Error(unsigned long sequence);
+
   // Overridden from ForeignWindowManagerHost:
   virtual bool Initialize() OVERRIDE;
   virtual void InitializeForTesting() OVERRIDE;

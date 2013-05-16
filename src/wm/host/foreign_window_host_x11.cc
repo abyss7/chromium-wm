@@ -7,6 +7,7 @@
 #include <X11/extensions/Xdamage.h>
 
 #include "wm/host/foreign_window_host_delegate.h"
+#include "wm/host/foreign_window_manager_host_x11.h"
 
 namespace wm {
 
@@ -18,7 +19,7 @@ ForeignWindowHostX11::ForeignWindowHostX11(
   DCHECK(window_handle_);
   // Damage resource is automatically freed when the window is destroyed or
   // we close our connection to the X server.
-  // TODO(reveman): Ignore possible X error.
+  ForeignWindowManagerHostX11::IgnoreX11Error(NextRequest(xdisplay_));
   XDamageCreate(xdisplay_, window_handle_, XDamageReportRawRectangles);
   base::MessagePumpAuraX11::Current()->AddDispatcherForWindow(
       this, window_handle_);
