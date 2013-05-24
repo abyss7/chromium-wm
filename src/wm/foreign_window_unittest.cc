@@ -198,5 +198,27 @@ TEST_F(ForeignWindowTest, RequestSetBounds) {
   EXPECT_FALSE(window->IsVisible());
 }
 
+// Test closing of foreign window.
+TEST_F(ForeignWindowTest, CloseWindow) {
+  ForeignTestWindow::CreateParams params;
+  scoped_ptr<ForeignTestWindow> test_window(new ForeignTestWindow(params));
+  test_window->Show();
+  test_window->Sync();
+  RunAllPendingInMessageLoop();
+  aura::WindowTracker tracker;
+  AddForeignWindowsToWindowTracker(
+      ash::Shell::GetPrimaryRootWindow(), tracker);
+  ASSERT_EQ(1u, tracker.windows().size());
+  aura::Window* window = *tracker.windows().begin();
+  EXPECT_TRUE(window->IsVisible());
+  views::Widget* widget =
+      ForeignWindow::GetForeignWindowForNativeView(window)->GetWidget();
+  widget->Close();
+  RunAllPendingInMessageLoop();
+  test_window->Sync();
+  RunAllPendingInMessageLoop();
+  EXPECT_EQ(0u, tracker.windows().size());
+}
+
 }  // namespace test
 }  // namespace wm

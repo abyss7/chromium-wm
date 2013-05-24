@@ -11,11 +11,22 @@
 
 namespace wm {
 
+namespace {
+
+const char* kAtomsToCache[] = {
+  "WM_DELETE_WINDOW",
+  "WM_PROTOCOLS",
+  NULL
+};
+
+}  // namespace
+
 ForeignWindowHostX11::ForeignWindowHostX11(
     gfx::PluginWindowHandle window_handle)
     : xdisplay_(base::MessagePumpAuraX11::GetDefaultXDisplay()),
       window_handle_(window_handle),
-      delegate_(NULL) {
+      delegate_(NULL),
+      atom_cache_(xdisplay_, kAtomsToCache) {
   DCHECK(window_handle_);
   // Damage resource is automatically freed when the window is destroyed or
   // we close our connection to the X server.
@@ -43,7 +54,20 @@ gfx::PluginWindowHandle ForeignWindowHostX11::GetWindowHandle() const {
 
 void ForeignWindowHostX11::Close() {
   DCHECK(window_handle_);
-  // TODO(reveman): Close managed window by sending a client message.
+
+  XEvent event;
+  event.xclient.type = ClientMessage;
+  event.xclient.window = window_handle_;
+  event.xclient.message_type = atom_cache_.GetAtom("WM_PROTOCOLS");
+  event.xclient.format = 32;
+  event.xclient.data.l[0] = atom_cache_.GetAtom("WM_DELETE_WINDOW");
+  event.xclient.data.l[1] = 0;
+  event.xclient.data.l[2] = 0;
+  event.xclient.data.l[3] = 0;
+  event.xclient.data.l[5] = 0;
+
+  ForeignWindowManagerHostX11::IgnoreX11Error(NextRequest(xdisplay_));
+  XSendEvent(xdisplay_, window_handle_, false, 0, &event);
 }
 
 void ForeignWindowHostX11::OnWindowDestroyed() {

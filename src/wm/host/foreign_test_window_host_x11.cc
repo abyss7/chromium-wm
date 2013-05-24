@@ -6,9 +6,19 @@
 
 #include "base/run_loop.h"
 #include "ui/aura/env.h"
+#include "ui/base/x/x11_atom_cache.h"
 #include "wm/foreign_window_manager.h"
 
 namespace wm {
+
+namespace {
+
+const char* kAtomsToCache[] = {
+  "WM_DELETE_WINDOW",
+  NULL
+};
+
+}  // namespace
 
 ForeignTestWindowHostX11::ForeignTestWindowHostX11(
     ForeignWindowManager* window_manager,
@@ -29,6 +39,7 @@ ForeignTestWindowHostX11::~ForeignTestWindowHostX11() {
 void ForeignTestWindowHostX11::Initialize() {
   DCHECK(parent_);
   display_ = XOpenDisplay(NULL);
+  atom_cache_.reset(new ui::X11AtomCache(display_, kAtomsToCache));
   XSetWindowAttributes swa;
   memset(&swa, 0, sizeof(swa));
   swa.background_pixel = WhitePixel(display_, DefaultScreen(display_));
@@ -110,6 +121,12 @@ void ForeignTestWindowHostX11::AddOnDestroyCallback(
 
 void ForeignTestWindowHostX11::ProcessXEvent(XEvent *event) {
   switch (event->type) {
+    case ClientMessage: {
+      Atom message_type = static_cast<Atom>(event->xclient.data.l[0]);
+      if (message_type == atom_cache_->GetAtom("WM_DELETE_WINDOW"))
+        Destroy();
+      break;
+    }
     case Expose: {
       if (event->xexpose.count != 0)
         break;
