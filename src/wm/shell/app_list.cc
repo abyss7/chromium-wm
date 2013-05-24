@@ -23,6 +23,7 @@
 #include "ui/gfx/image/image_skia.h"
 #include "ui/gfx/rect.h"
 #include "ui/views/examples/examples_window_with_content.h"
+#include "wm/foreign_test_window.h"
 #include "wm/shell/example_factory.h"
 
 namespace wm {
@@ -40,6 +41,7 @@ class WindowTypeLauncherItem : public app_list::AppListItemModel {
     LOCK_SCREEN,
     WIDGETS_WINDOW,
     EXAMPLES_WINDOW,
+    MANAGED_WINDOW,
     UNMANAGED_WINDOW,
     LAST_TYPE,
   };
@@ -57,6 +59,7 @@ class WindowTypeLauncherItem : public app_list::AppListItemModel {
         SK_ColorYELLOW,
         SK_ColorCYAN,
         SK_ColorMAGENTA,
+        SK_ColorBLACK,
     };
 
     const int kIconSize = 128;
@@ -80,8 +83,10 @@ class WindowTypeLauncherItem : public app_list::AppListItemModel {
         return "Show Example Widgets";
       case EXAMPLES_WINDOW:
         return "Open Views Examples Window";
+      case MANAGED_WINDOW:
+        return "Show Managed Window";
       case UNMANAGED_WINDOW:
-        return "Show Umanaged Window";
+        return "Show Unmanaged Window";
       default:
         return "Unknown window type.";
     }
@@ -128,6 +133,11 @@ class WindowTypeLauncherItem : public app_list::AppListItemModel {
             views::examples::DO_NOTHING_ON_CLOSE,
             ash::Shell::GetInstance()->browser_context());
 #endif
+        break;
+      }
+      case MANAGED_WINDOW: {
+        ForeignTestWindow::CreateParams params;
+        ForeignTestWindow::Create(params);
         break;
       }
       case UNMANAGED_WINDOW: {
