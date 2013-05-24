@@ -5,6 +5,10 @@
 #ifndef WM_FOREIGN_WINDOW_CLIENT_VIEW_H_
 #define WM_FOREIGN_WINDOW_CLIENT_VIEW_H_
 
+#include <deque>
+
+#include "ui/aura/window_observer.h"
+#include "ui/compositor/compositor_observer.h"
 #include "ui/views/window/client_view.h"
 #include "wm/gpu/foreign_window_texture_factory.h"
 
@@ -12,6 +16,8 @@ namespace wm {
 
 class ForeignWindowClientView
     : public views::ClientView,
+      public aura::WindowObserver,
+      public ui::CompositorObserver,
       public ForeignWindowTextureFactoryObserver,
       public base::SupportsWeakPtr<ForeignWindowClientView> {
  public:
@@ -23,6 +29,21 @@ class ForeignWindowClientView
   virtual gfx::Size GetPreferredSize() OVERRIDE;
   virtual gfx::Size GetMinimumSize() OVERRIDE;
   virtual void OnBoundsChanged(const gfx::Rect& previous_bounds) OVERRIDE;
+
+  // Overridden from aura::WindowObserver:
+  virtual void OnWindowRemovingFromRootWindow(aura::Window* window) OVERRIDE;
+
+  // Overridden from ui::CompositorObserver:
+  virtual void OnCompositingDidCommit(ui::Compositor* compositor) OVERRIDE;
+  virtual void OnCompositingStarted(ui::Compositor* compositor,
+                                    base::TimeTicks start_time) OVERRIDE;
+  virtual void OnCompositingEnded(ui::Compositor* compositor) OVERRIDE;
+  virtual void OnCompositingAborted(ui::Compositor* compositor) OVERRIDE;
+  virtual void OnCompositingLockStateChanged(
+      ui::Compositor* compositor) OVERRIDE;
+  virtual void OnUpdateVSyncParameters(ui::Compositor* compositor,
+                                       base::TimeTicks timebase,
+                                       base::TimeDelta interval) OVERRIDE;
 
   // Overridden from wm::ForeignWindowTextureFactoryObserver:
   virtual void OnLostResources() OVERRIDE;
@@ -45,6 +66,9 @@ class ForeignWindowClientView
  private:
   void CreateTexture();
   void OnTextureCreated(scoped_refptr<ForeignWindowTexture> texture);
+  void AddOnCommitCallback(const base::Closure& callback);
+  void RunOnCommitCallbacks();
+  ui::Compositor* GetCompositor();
 
   scoped_ptr<views::View> contents_view_;
   scoped_ptr<aura::Window> window_;
@@ -54,7 +78,9 @@ class ForeignWindowClientView
   bool window_visible_;
   bool window_destroyed_;
   scoped_refptr<ForeignWindowTexture> texture_;
+  bool texture_is_valid_;
   int pending_texture_created_count_;
+  std::deque<base::Closure> on_commit_callbacks_;
 
   DISALLOW_COPY_AND_ASSIGN(ForeignWindowClientView);
 };

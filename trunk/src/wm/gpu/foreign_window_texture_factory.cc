@@ -107,6 +107,8 @@ unsigned int ForeignWindowTexture::PrepareTexture() {
     contents_changed_ = false;
   }
 
+  RunOnPrepareTextureCallbacks();
+
   return texture_id_;
 }
 
@@ -128,6 +130,18 @@ void ForeignWindowTexture::OnLostResources() {
 void ForeignWindowTexture::OnContentsChanged() {
   if (image_id_)
     contents_changed_ = true;
+}
+
+void ForeignWindowTexture::AddOnPrepareTextureCallback(
+    const base::Closure& callback) {
+  on_prepare_texture_callbacks_.push_back(callback);
+}
+
+void ForeignWindowTexture::RunOnPrepareTextureCallbacks() {
+  while (!on_prepare_texture_callbacks_.empty()) {
+    on_prepare_texture_callbacks_.front().Run();
+    on_prepare_texture_callbacks_.pop_front();
+  }
 }
 
 ForeignWindowTextureFactory::ForeignWindowTextureFactory(
