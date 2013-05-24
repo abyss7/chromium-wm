@@ -9,16 +9,10 @@
 #include "base/compiler_specific.h"
 #include "base/message_loop.h"
 #include "testing/gtest/include/gtest/gtest.h"
-#include "ui/aura/env_observer.h"
-
-namespace ui {
-class ScopedAnimationDurationScaleMode;
-}
 
 namespace wm {
-class ForeignWindowManager;
-
 namespace test {
+class WmTestHelper;
 
 class WmTestBase : public testing::Test {
  public:
@@ -36,8 +30,7 @@ class WmTestBase : public testing::Test {
 
  private:
   MessageLoopForUI message_loop_;
-
-  scoped_ptr<ui::ScopedAnimationDurationScaleMode> zero_duration_mode_;
+  scoped_ptr<WmTestHelper> wm_test_helper_;
 
   DISALLOW_COPY_AND_ASSIGN(WmTestBase);
 };
