@@ -97,6 +97,11 @@ void ForeignTestWindowHostX11::SetBounds(const gfx::Rect& bounds) {
   XFlush(display_);
 }
 
+void ForeignTestWindowHostX11::AddOnDestroyCallback(
+    const base::Closure& callback) {
+  on_destroy_callbacks_.push_back(callback);
+}
+
 void ForeignTestWindowHostX11::ProcessXEvent(XEvent *event) {
   switch (event->type) {
     case Expose: {
@@ -126,6 +131,10 @@ void ForeignTestWindowHostX11::ProcessXEvent(XEvent *event) {
                           event->xconfigure.height);
       break;
     }
+    case DestroyNotify: {
+      RunOnDestroyCallbacks();
+      break;
+    }
   }
 }
 
@@ -136,6 +145,13 @@ void ForeignTestWindowHostX11::PumpXEvents() {
     ProcessXEvent(&event);
   }
   XFlush(display_);
+}
+
+void ForeignTestWindowHostX11::RunOnDestroyCallbacks() {
+  while (!on_destroy_callbacks_.empty()) {
+    on_destroy_callbacks_.front().Run();
+    on_destroy_callbacks_.pop_front();
+  }
 }
 
 void ForeignTestWindowHostX11::OnFileCanReadWithoutBlocking(int fd) {

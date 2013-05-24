@@ -19,6 +19,7 @@
 #include "ui/views/corewm/input_method_event_filter.h"
 #include "wm/foreign_window_manager.h"
 #include "wm/host/foreign_window_manager_host.h"
+#include "wm/shell/example_factory.h"
 
 namespace wm {
 
@@ -47,8 +48,7 @@ class DummyKeyboardControllerProxy : public keyboard::KeyboardControllerProxy {
 namespace shell {
 
 ShellDelegateImpl::ShellDelegateImpl()
-    : foreign_window_manager_(NULL),
-      watcher_(NULL),
+    : watcher_(NULL),
       launcher_delegate_(NULL),
       locked_(false),
       spoken_feedback_enabled_(false),
@@ -58,11 +58,6 @@ ShellDelegateImpl::ShellDelegateImpl()
 }
 
 ShellDelegateImpl::~ShellDelegateImpl() {
-}
-
-void ShellDelegateImpl::SetForeignWindowManager(
-    ForeignWindowManager* foreign_window_manager) {
-  foreign_window_manager_ = foreign_window_manager;
 }
 
 void ShellDelegateImpl::SetWatcher(ash::shell::WindowWatcher* watcher) {
@@ -187,7 +182,7 @@ void ShellDelegateImpl::SilenceSpokenFeedback() const {
 }
 
 app_list::AppListViewDelegate* ShellDelegateImpl::CreateAppListViewDelegate() {
-  return ash::shell::CreateAppListViewDelegate();
+  return wm::shell::CreateAppListViewDelegate();
 }
 
 ash::LauncherDelegate* ShellDelegateImpl::CreateLauncherDelegate(
@@ -252,8 +247,7 @@ ui::MenuModel* ShellDelegateImpl::CreateContextMenu(aura::RootWindow* root) {
 }
 
 ash::RootWindowHostFactory* ShellDelegateImpl::CreateRootWindowHostFactory() {
-  DCHECK(foreign_window_manager_);
-  return foreign_window_manager_->CreateRootWindowHostFactory();
+  return ForeignWindowManager::GetInstance()->CreateRootWindowHostFactory();
 }
 
 string16 ShellDelegateImpl::GetProductName() const {

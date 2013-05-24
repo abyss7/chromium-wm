@@ -30,6 +30,9 @@ class RootWindowHostFactoryImpl : public ash::RootWindowHostFactory {
 
 }  // namespace
 
+// static
+ForeignWindowManager* ForeignWindowManager::instance_ = NULL;
+
 ForeignWindowManager::ForeignWindowManager()
     : host_(ForeignWindowManagerHost::Create()),
       image_cursors_(new ash::ImageCursors),
@@ -37,6 +40,42 @@ ForeignWindowManager::ForeignWindowManager()
 }
 
 ForeignWindowManager::~ForeignWindowManager() {
+}
+
+// static
+ForeignWindowManager* ForeignWindowManager::CreateInstance() {
+  CHECK(!instance_);
+  instance_ = new ForeignWindowManager;
+  if (!instance_->Initialize()) {
+    delete instance_;
+    instance_ = NULL;
+  }
+  return instance_;
+}
+
+// static
+ForeignWindowManager* ForeignWindowManager::CreateInstanceForTesting() {
+  CHECK(!instance_);
+  instance_ = new ForeignWindowManager;
+  instance_->InitializeForTesting();
+  return instance_;
+}
+
+// static
+ForeignWindowManager* ForeignWindowManager::GetInstance() {
+  DCHECK(instance_);
+  return instance_;
+}
+
+// static
+bool ForeignWindowManager::HasInstance() {
+  return !!instance_;
+}
+
+// static
+void ForeignWindowManager::DeleteInstance() {
+  delete instance_;
+  instance_ = NULL;
 }
 
 bool ForeignWindowManager::Initialize() {
@@ -77,6 +116,7 @@ void ForeignWindowManager::SetDefaultCursor(gfx::NativeCursor cursor) {
 }
 
 void ForeignWindowManager::CreateContainers(aura::RootWindow* root_window) {
+  DCHECK(initialized_);
   aura::Window* container = new aura::Window(NULL);
   container->set_id(internal::kShellWindowId_UnmanagedWindowContainer);
   container->SetName("ForeignUnmanagedWindowContainer");

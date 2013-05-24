@@ -14,18 +14,12 @@ namespace wm {
 namespace test {
 
 TestShellDelegate::TestShellDelegate()
-    : foreign_window_manager_(NULL),
-      screen_magnifier_enabled_(false),
+    : screen_magnifier_enabled_(false),
       screen_magnifier_type_(ash::kDefaultMagnifierType),
       test_session_state_delegate_(NULL) {
 }
 
 TestShellDelegate::~TestShellDelegate() {
-}
-
-void TestShellDelegate::SetForeignWindowManager(
-    ForeignWindowManager* foreign_window_manager) {
-  foreign_window_manager_ = foreign_window_manager;
 }
 
 bool TestShellDelegate::IsFirstRunAfterBoot() const {
@@ -200,8 +194,7 @@ double TestShellDelegate::GetSavedScreenMagnifierScale() {
 }
 
 ash::RootWindowHostFactory* TestShellDelegate::CreateRootWindowHostFactory() {
-  DCHECK(foreign_window_manager_);
-  return foreign_window_manager_->CreateRootWindowHostFactory();
+  return ForeignWindowManager::GetInstance()->CreateRootWindowHostFactory();
 }
 
 string16 TestShellDelegate::GetProductName() const {

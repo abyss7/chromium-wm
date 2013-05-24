@@ -10,6 +10,8 @@
 // Get rid of a macro from Xlib.h that conflicts with Aura's RootWindow class.
 #undef RootWindow
 
+#include <deque>
+
 #include "base/basictypes.h"
 #include "base/compiler_specific.h"
 #include "base/message_loop.h"
@@ -37,6 +39,7 @@ class ForeignTestWindowHostX11 : public ForeignTestWindowHost,
   virtual void Destroy() OVERRIDE;
   virtual void Sync() OVERRIDE;
   virtual void SetBounds(const gfx::Rect& bounds) OVERRIDE;
+  virtual void AddOnDestroyCallback(const base::Closure& callback) OVERRIDE;
 
   // Overridden from MessageLoopForIO::Watcher:
   virtual void OnFileCanReadWithoutBlocking(int fd) OVERRIDE;
@@ -48,6 +51,7 @@ class ForeignTestWindowHostX11 : public ForeignTestWindowHost,
  private:
   void ProcessXEvent(XEvent* event);
   void PumpXEvents();
+  void RunOnDestroyCallbacks();
 
   // The display and the native X window.
   Display* display_;
@@ -57,6 +61,7 @@ class ForeignTestWindowHostX11 : public ForeignTestWindowHost,
   bool managed_;
   XFontStruct* font_info_;
   ::GC gc_;
+  std::deque<base::Closure> on_destroy_callbacks_;
 
   MessageLoopForIO::FileDescriptorWatcher connection_watcher_;
 
