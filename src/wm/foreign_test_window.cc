@@ -60,12 +60,12 @@ void SyncOnIO(ForeignTestWindowHost* host) {
   host->Sync();
 }
 
-void SyncCompleted(base::RunLoop* run_loop) {
-  run_loop->Quit();
-}
-
 void SetBoundsOnIO(ForeignTestWindowHost* host, const gfx::Rect& bounds) {
   host->SetBounds(bounds);
+}
+
+void GetBoundsOnIO(ForeignTestWindowHost* host, gfx::Rect* bounds) {
+  host->GetBounds(bounds);
 }
 
 void AddOnDestroyCallbackOnIO(ForeignTestWindowHost* host,
@@ -76,6 +76,10 @@ void AddOnDestroyCallbackOnIO(ForeignTestWindowHost* host,
 void PostMessageOnIO(scoped_refptr<base::MessageLoopProxy> message_loop_proxy,
                      const base::Closure& callback) {
   message_loop_proxy->PostTask(FROM_HERE, callback);
+}
+
+void OnSyncCompleted(base::RunLoop* run_loop) {
+  run_loop->Quit();
 }
 
 void OnWindowDestroyed(scoped_ptr<ForeignTestWindow> window) {
@@ -149,7 +153,7 @@ void ForeignTestWindow::Sync() {
   g_foreign_test_window_thread.Pointer()->message_loop_proxy()->
       PostTaskAndReply(FROM_HERE,
                        base::Bind(&SyncOnIO, host_),
-                       base::Bind(&SyncCompleted,
+                       base::Bind(&OnSyncCompleted,
                                   base::Unretained(&run_loop)));
   run_loop.Run();
 }
@@ -158,6 +162,18 @@ void ForeignTestWindow::SetBounds(const gfx::Rect& bounds) {
   g_foreign_test_window_thread.Pointer()->message_loop_proxy()->PostTask(
       FROM_HERE,
       base::Bind(&SetBoundsOnIO, host_, bounds));
+}
+
+gfx::Rect ForeignTestWindow::GetBounds() {
+  gfx::Rect host_bounds;
+  base::RunLoop run_loop(aura::Env::GetInstance()->GetDispatcher());
+  g_foreign_test_window_thread.Pointer()->message_loop_proxy()->
+      PostTaskAndReply(FROM_HERE,
+                       base::Bind(&GetBoundsOnIO, host_, &host_bounds),
+                       base::Bind(&OnSyncCompleted,
+                                  base::Unretained(&run_loop)));
+  run_loop.Run();
+  return host_bounds;
 }
 
 }  // namespace wm

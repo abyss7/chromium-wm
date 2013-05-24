@@ -33,6 +33,7 @@ class ForeignTestWindow {
   void Destroy();
   void Hide();
   void SetBounds(const gfx::Rect& bounds);
+  gfx::Rect GetBounds();
   void Show();
   void Sync();
 

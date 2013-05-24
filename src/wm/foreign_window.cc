@@ -104,7 +104,7 @@ void ForeignWindow::DeleteDelegate() {
 }
 
 bool ForeignWindow::CanResize() const {
-  return false;
+  return managed_;
 }
 
 bool ForeignWindow::CanMaximize() const {
