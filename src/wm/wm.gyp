@@ -92,6 +92,8 @@
         '../ash/test/display_manager_test_api.h',
         '../ash/test/launcher_view_test_api.cc',
         '../ash/test/launcher_view_test_api.h',
+        '../ash/test/shell_test_api.cc',
+        '../ash/test/shell_test_api.h',
         '../ash/test/test_activation_delegate.cc',
         '../ash/test/test_activation_delegate.h',
         '../ash/test/test_launcher_delegate.cc',
@@ -113,6 +115,8 @@
         'test/test_shell_delegate.h',
         'test/wm_test_base.cc',
         'test/wm_test_base.h',
+        'test/wm_test_helper.cc',
+        'test/wm_test_helper.h',
         'test/wm_unittests.cc',
       ],
       'conditions': [
