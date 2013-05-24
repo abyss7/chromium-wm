@@ -32,9 +32,9 @@ namespace {
 
 const char* kAtomsToCache[] = {
   "WM_DELETE_WINDOW",
-  "_NET_WM_PING",
-  "_NET_WM_PID",
   "WM_S0",
+  "_NET_WM_PID",
+  "_NET_WM_PING",
   NULL
 };
 

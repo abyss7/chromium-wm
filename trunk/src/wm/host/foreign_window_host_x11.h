@@ -11,6 +11,7 @@
 #undef RootWindow
 
 #include "base/message_loop.h"
+#include "ui/base/x/x11_atom_cache.h"
 #include "wm/host/foreign_window_host.h"
 
 namespace wm {
@@ -34,6 +35,8 @@ class ForeignWindowHostX11 : public ForeignWindowHost,
   Display* xdisplay_;
   gfx::PluginWindowHandle window_handle_;
   ForeignWindowHostDelegate* delegate_;
+
+  ui::X11AtomCache atom_cache_;
 
   DISALLOW_COPY_AND_ASSIGN(ForeignWindowHostX11);
 };

@@ -18,6 +18,10 @@
 #include "ui/gfx/rect.h"
 #include "wm/host/foreign_test_window_host.h"
 
+namespace ui {
+class X11AtomCache;
+}
+
 namespace wm {
 class ForeignWindowManager;
 
@@ -65,6 +69,8 @@ class ForeignTestWindowHostX11 : public ForeignTestWindowHost,
   std::deque<base::Closure> on_destroy_callbacks_;
 
   MessageLoopForIO::FileDescriptorWatcher connection_watcher_;
+
+  scoped_ptr<ui::X11AtomCache> atom_cache_;
 
   DISALLOW_COPY_AND_ASSIGN(ForeignTestWindowHostX11);
 };
