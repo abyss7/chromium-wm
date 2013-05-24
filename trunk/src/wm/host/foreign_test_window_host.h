@@ -34,6 +34,7 @@ class ForeignTestWindowHost {
   virtual void Destroy() = 0;
   virtual void Sync() = 0;
   virtual void SetBounds(const gfx::Rect& bounds) = 0;
+  virtual void GetBounds(gfx::Rect* bounds) = 0;
   virtual void AddOnDestroyCallback(const base::Closure& callback) = 0;
 };
 

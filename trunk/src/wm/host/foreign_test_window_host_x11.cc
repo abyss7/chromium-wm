@@ -97,6 +97,12 @@ void ForeignTestWindowHostX11::SetBounds(const gfx::Rect& bounds) {
   XFlush(display_);
 }
 
+void ForeignTestWindowHostX11::GetBounds(gfx::Rect* bounds) {
+  XSync(display_, False);
+  PumpXEvents();
+  *bounds = bounds_;
+}
+
 void ForeignTestWindowHostX11::AddOnDestroyCallback(
     const base::Closure& callback) {
   on_destroy_callbacks_.push_back(callback);

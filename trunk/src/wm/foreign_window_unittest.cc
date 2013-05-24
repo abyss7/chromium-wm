@@ -4,9 +4,9 @@
 
 #include "wm/foreign_window.h"
 
-#include "base/memory/ref_counted.h"
 #include "ui/aura/root_window.h"
 #include "ui/aura/window_tracker.h"
+#include "ui/views/widget/widget.h"
 #include "wm/foreign_test_window.h"
 #include "wm/test/wm_test_base.h"
 
@@ -126,6 +126,31 @@ TEST_F(ForeignWindowTest, Unmanaged) {
   test_window->Sync();
   RunAllPendingInMessageLoop();
   EXPECT_FALSE(window->IsVisible());
+}
+
+// Test that window size changes are propagated to foreign window correctly.
+TEST_F(ForeignWindowTest, Resize) {
+  ForeignTestWindow::CreateParams params;
+  scoped_ptr<ForeignTestWindow> test_window(new ForeignTestWindow(params));
+  test_window->Show();
+  test_window->Sync();
+  RunAllPendingInMessageLoop();
+  aura::WindowTracker tracker;
+  AddForeignWindowsToWindowTracker(
+      ash::Shell::GetPrimaryRootWindow(), tracker);
+  ASSERT_EQ(1u, tracker.windows().size());
+  aura::Window* window = *tracker.windows().begin();
+  EXPECT_TRUE(window->IsVisible());
+  gfx::Size original_size(test_window->GetBounds().size());
+  gfx::Size new_size(original_size);
+  new_size.Enlarge(100, 100);
+  window->SetBounds(gfx::Rect(window->bounds().origin(), new_size));
+  RunAllPendingInMessageLoop();
+  EXPECT_EQ(new_size.ToString(), test_window->GetBounds().size().ToString());
+  new_size.Enlarge(-200, -200);
+  window->SetBounds(gfx::Rect(window->bounds().origin(), new_size));
+  RunAllPendingInMessageLoop();
+  EXPECT_EQ(new_size.ToString(), test_window->GetBounds().size().ToString());
 }
 
 }  // namespace test

@@ -22,6 +22,7 @@ class ForeignTestWindowHostImpl : public ForeignTestWindowHost {
   virtual void Destroy() OVERRIDE {}
   virtual void Sync() OVERRIDE {}
   virtual void SetBounds(const gfx::Rect& bounds) OVERRIDE {}
+  virtual void GetBounds(gfx::Rect* bounds) OVERRIDE {}
   virtual void AddOnDestroyCallback(const base::Closure& callback) OVERRIDE {}
 };
 
