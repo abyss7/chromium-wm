@@ -1,6 +1,6 @@
 vars = {
   'chromium_svn': 'http://src.chromium.org/svn/trunk/src',
-  'chromium_rev': '200680'
+  'chromium_rev': '201954'
 }
 
 deps = {

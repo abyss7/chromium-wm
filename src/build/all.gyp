@@ -377,6 +377,7 @@
           'target_name': 'chromium_builder_qa',
           'type': 'none',
           'dependencies': [
+            '../chrome/chrome.gyp:chrome',
             # Dependencies of pyauto_functional tests.
             '../remoting/remoting.gyp:remoting_webapp',
           ],
@@ -391,6 +392,16 @@
             ['OS=="mac"', {
               'dependencies': [
                 '../remoting/remoting.gyp:remoting_me2me_host_archive',
+              ],
+            }],
+            ['OS=="win"', {
+              'dependencies': [
+                '../chrome/chrome.gyp:crash_service',
+              ],
+            }],
+            ['OS=="win" and target_arch=="ia32"', {
+              'dependencies': [
+                '../chrome/chrome.gyp:crash_service_win64',
               ],
             }],
             ['OS=="win" and component != "shared_library" and wix_exists == "True" and sas_dll_exists == "True"', {
@@ -423,6 +434,13 @@
             '../third_party/libjingle/libjingle.gyp:peerconnection_server',
             '../third_party/webrtc/tools/tools.gyp:frame_analyzer',
             '../third_party/webrtc/tools/tools.gyp:rgba_to_i420_converter',
+          ],
+          'conditions': [
+            ['OS=="win"', {
+              'dependencies': [
+                '../chrome/chrome.gyp:crash_service',
+              ],
+            }],
           ],
         },  # target_name: chromium_builder_webrtc
         {
