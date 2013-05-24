@@ -12,14 +12,17 @@
 #include "ui/base/ime/text_input_test_support.h"
 #include "ui/compositor/layer_animator.h"
 #include "ui/compositor/scoped_animation_duration_scale_mode.h"
-#if defined(ENABLE_MESSAGE_CENTER)
 #include "ui/message_center/message_center.h"
-#endif
 #include "wm/foreign_test_window.h"
 #include "wm/foreign_window_manager.h"
 #include "wm/gpu/foreign_window_texture_factory.h"
 #include "wm/host/foreign_test_window_host.h"
 #include "wm/test/test_shell_delegate.h"
+
+#if defined(OS_CHROMEOS)
+#include "chromeos/audio/cras_audio_handler.h"
+#include "chromeos/power/power_manager_handler.h"
+#endif
 
 namespace wm {
 namespace test {
@@ -51,10 +54,17 @@ void WmTestBase::SetUp() {
   foreign_window_manager_->InitializeForTesting();
   delegate->SetForeignWindowManager(foreign_window_manager_.get());
 
-#if defined(ENABLE_MESSAGE_CENTER)
-  // Creates MessageCenter since g_browser_process is not created in WmTestBase
-  // tests.
+  // The global message center state must be initialized absent
+  // g_browser_process.
   message_center::MessageCenter::Initialize();
+
+#if defined(OS_CHROMEOS)
+  if (ash::switches::UseNewAudioHandler()) {
+    // Create CrasAuidoHandler for testing since g_browser_process is not
+    // created in AshTestBase tests.
+    chromeos::CrasAudioHandler::InitializeForTesting();
+  }
+  chromeos::PowerManagerHandler::Initialize();
 #endif
 
   ash::Shell::CreateInstance(delegate);
@@ -77,9 +87,14 @@ void WmTestBase::TearDown() {
   // Tear down the shell.
   ash::Shell::DeleteInstance();
 
-#if defined(ENABLE_MESSAGE_CENTER)
-  // Remove global message center state.
+  // The global message center state must be shutdown absent
+  // g_browser_process.
   message_center::MessageCenter::Shutdown();
+
+#if defined(OS_CHROMEOS)
+  if (ash::switches::UseNewAudioHandler())
+    chromeos::CrasAudioHandler::Shutdown();
+  chromeos::PowerManagerHandler::Shutdown();
 #endif
 
   // Destroy the WM.

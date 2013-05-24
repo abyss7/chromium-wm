@@ -4,6 +4,7 @@
 
 #include "wm/shell/content_client/shell_browser_main_parts.h"
 
+#include "ash/ash_switches.h"
 #include "ash/desktop_background/desktop_background_controller.h"
 #include "ash/display/display_controller.h"
 #include "ash/shell.h"
@@ -12,22 +13,21 @@
 #include "ui/aura/env.h"
 #include "ui/aura/root_window.h"
 #include "ui/base/resource/resource_bundle.h"
+#include "ui/message_center/message_center.h"
 #include "ui/views/test/test_views_delegate.h"
 #include "wm/foreign_test_window.h"
 #include "wm/foreign_window_manager.h"
 #include "wm/gpu/foreign_window_texture_factory.h"
 #include "wm/shell/shell_delegate_impl.h"
 
-#if defined(ENABLE_MESSAGE_CENTER)
-#include "ui/message_center/message_center.h"
-#endif
-
 #if defined(OS_LINUX)
 #include "ui/base/touch/touch_factory_x11.h"
 #endif
 
 #if defined(OS_CHROMEOS)
+#include "chromeos/audio/cras_audio_handler.h"
 #include "chromeos/dbus/dbus_thread_manager.h"
+#include "chromeos/power/power_manager_handler.h"
 #endif
 
 namespace ash {
@@ -96,11 +96,19 @@ void ShellBrowserMainParts::PreMainMessageLoopRun() {
   foreign_window_manager_->InitializeForTesting();
   delegate->SetForeignWindowManager(foreign_window_manager_.get());
 
-#if defined(ENABLE_MESSAGE_CENTER)
   // The global message center state must be initialized absent
   // g_browser_process.
   message_center::MessageCenter::Initialize();
+
+#if defined(OS_CHROMEOS)
+  if (ash::switches::UseNewAudioHandler()) {
+    // Create CrasAuidoHandler for testing since g_browser_process is not
+    // created in AshTestBase tests.
+    chromeos::CrasAudioHandler::InitializeForTesting();
+  }
+  chromeos::PowerManagerHandler::Initialize();
 #endif
+
   ash::Shell::CreateInstance(delegate);
   ash::Shell::GetInstance()->set_browser_context(browser_context_.get());
 
@@ -144,13 +152,25 @@ void ShellBrowserMainParts::PostMainMessageLoopRun() {
   browser_context_.reset();
   window_watcher_.reset();
   ash::Shell::DeleteInstance();
-#if defined(ENABLE_MESSAGE_CENTER)
   // The global message center state must be shutdown absent
   // g_browser_process.
   message_center::MessageCenter::Shutdown();
+
+#if defined(OS_CHROMEOS)
+  if (ash::switches::UseNewAudioHandler())
+    chromeos::CrasAudioHandler::Shutdown();
+  chromeos::PowerManagerHandler::Shutdown();
 #endif
+
   foreign_window_manager_.reset();
   aura::Env::DeleteInstance();
+
+  // The keyboard may have created a WebContents. The WebContents is destroyed
+  // with the UI, and it needs the BrowserContext to be alive during its
+  // destruction. So destroy all of the UI elements before destroying the
+  // browser context.
+  browser_context_.reset();
+
   ForeignWindowTextureFactory::Terminate();
 }
 

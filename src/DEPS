@@ -1,6 +1,6 @@
 vars = {
   'chromium_svn': 'http://src.chromium.org/svn/trunk/src',
-  'chromium_rev': '196106'
+  'chromium_rev': '200680'
 }
 
 deps = {
@@ -91,6 +91,8 @@ deps = {
     Var('chromium_svn')+'/tools@'+Var('chromium_rev'),
   'src/ui':
     Var('chromium_svn')+'/ui@'+Var('chromium_rev'),
+  'src/url':
+    Var('chromium_svn')+'/url@'+Var('chromium_rev'),
   'src/webkit':
     Var('chromium_svn')+'/webkit@'+Var('chromium_rev'),
   'src/win8':
@@ -102,20 +104,12 @@ deps = {
     From('chromium_deps', 'src/googleurl'),
   'src/native_client':
     From('chromium_deps', 'src/native_client'),
-  'src/sandbox/linux/seccomp-legacy':
-    From('chromium_deps', 'src/sandbox/linux/seccomp-legacy'),
   'src/sdch/open-vcdiff':
     From('chromium_deps', 'src/sdch/open-vcdiff'),
   'src/testing/gmock':
     From('chromium_deps', 'src/testing/gmock'),
   'src/testing/gtest':
     From('chromium_deps', 'src/testing/gtest'),
-  'src/third_party/WebKit/Source':
-    From('chromium_deps', 'src/third_party/WebKit/Source'),
-  'src/third_party/WebKit/Tools/DumpRenderTree':
-    From('chromium_deps', 'src/third_party/WebKit/Tools/DumpRenderTree'),
-  'src/third_party/WebKit/Tools/TestWebKitAPI':
-    From('chromium_deps', 'src/third_party/WebKit/Tools/TestWebKitAPI'),
   'src/third_party/WebKit':
     From('chromium_deps', 'src/third_party/WebKit'),
   'src/third_party/angle':
@@ -202,8 +196,6 @@ deps = {
 
 deps_os = {
   'unix': {
-    'src/third_party/WebKit/Tools/gdb':
-      From('chromium_deps', 'src/third_party/WebKit/Tools/gdb'),
     'src/third_party/cros_dbus_cplusplus/source':
       From('chromium_deps', 'src/third_party/cros_dbus_cplusplus/source'),
     'src/third_party/cros_system_api':
