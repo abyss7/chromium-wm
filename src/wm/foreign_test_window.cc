@@ -9,6 +9,7 @@
 #include "base/run_loop.h"
 #include "base/threading/thread.h"
 #include "ui/aura/env.h"
+#include "wm/foreign_window_manager.h"
 #include "wm/host/foreign_test_window_host.h"
 
 namespace wm {
@@ -67,18 +68,51 @@ void SetBoundsOnIO(ForeignTestWindowHost* host, const gfx::Rect& bounds) {
   host->SetBounds(bounds);
 }
 
+void AddOnDestroyCallbackOnIO(ForeignTestWindowHost* host,
+                              const base::Closure& callback) {
+  host->AddOnDestroyCallback(callback);
+}
+
+void PostMessageOnIO(scoped_refptr<base::MessageLoopProxy> message_loop_proxy,
+                     const base::Closure& callback) {
+  message_loop_proxy->PostTask(FROM_HERE, callback);
+}
+
+void OnWindowDestroyed(scoped_ptr<ForeignTestWindow> window) {
+  window.reset();  // Delete window
+}
+
 }  // namespace
 
-ForeignTestWindow::CreateParams::CreateParams(
-    ForeignWindowManager* window_manager)
-    : window_manager(window_manager),
-      bounds(gfx::Rect(50, 50, 400, 300)),
-      managed(true) {
+ForeignTestWindow::CreateParams::CreateParams()
+    : bounds(gfx::Rect(50, 50, 400, 300)),
+      managed(true),
+      show(true) {
+}
+
+// static
+void ForeignTestWindow::Create(const CreateParams& params) {
+  scoped_ptr<ForeignTestWindow> window(new ForeignTestWindow(params));
+  if (params.show)
+    window->Show();
+
+  // Delete instance when foreign window has been destroyed.
+  ForeignTestWindowHost* host = window->host_;
+  g_foreign_test_window_thread.Pointer()->message_loop_proxy()->PostTask(
+      FROM_HERE,
+      base::Bind(&AddOnDestroyCallbackOnIO,
+                 host,
+                 base::Bind(&PostMessageOnIO,
+                            MessageLoop::current()->message_loop_proxy(),
+                            base::Bind(&OnWindowDestroyed,
+                                       base::Passed(&window)))));
 }
 
 ForeignTestWindow::ForeignTestWindow(const CreateParams& params) {
+  ForeignWindowManager* foreign_window_manager =
+      ForeignWindowManager::GetInstance();
   host_ = ForeignTestWindowHost::Create(
-      params.window_manager,
+      foreign_window_manager,
       params.bounds,
       params.managed);
   g_foreign_test_window_thread.Pointer()->message_loop_proxy()->PostTask(

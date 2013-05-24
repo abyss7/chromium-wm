@@ -86,15 +86,13 @@ void ShellBrowserMainParts::PreMainMessageLoopRun() {
 
   browser_context_.reset(new content::ShellBrowserContext(false));
 
+  ForeignWindowManager::CreateInstanceForTesting();
+
   // A ViewsDelegate is required.
   if (!views::ViewsDelegate::views_delegate)
     views::ViewsDelegate::views_delegate = new ShellViewsDelegate;
 
   wm::shell::ShellDelegateImpl* delegate = new wm::shell::ShellDelegateImpl;
-
-  foreign_window_manager_.reset(new ForeignWindowManager);
-  foreign_window_manager_->InitializeForTesting();
-  delegate->SetForeignWindowManager(foreign_window_manager_.get());
 
   // The global message center state must be initialized absent
   // g_browser_process.
@@ -124,28 +122,19 @@ void ShellBrowserMainParts::PreMainMessageLoopRun() {
   else
     controller->SetDefaultWallpaper(ash::kDefaultSmallWallpaper);
 
-  foreign_window_manager_->SetDisplay(
+  ForeignWindowManager::GetInstance()->SetDisplay(
       ash::DisplayController::GetPrimaryDisplay());
-  foreign_window_manager_->SetDefaultCursor(ui::kCursorPointer);
+  ForeignWindowManager::GetInstance()->SetDefaultCursor(ui::kCursorPointer);
 
   // TODO(reveman): Properly integrate with
   // ash::RootWindowController::CreateContainers.
-  foreign_window_manager_->CreateContainers(
+  ForeignWindowManager::GetInstance()->CreateContainers(
       ash::Shell::GetPrimaryRootWindow());
 
-  ForeignTestWindow::CreateParams params(foreign_window_manager_.get());
-  foreign_test_window_.reset(new ForeignTestWindow(params));
-  foreign_test_window_->Show();
-
-  ForeignTestWindow::CreateParams unmanaged_params(
-      foreign_window_manager_.get());
-  unmanaged_params.bounds = gfx::Rect(10, 10, 300, 200);
-  unmanaged_params.managed = false;
-  unmanaged_foreign_test_window_.reset(
-      new ForeignTestWindow(unmanaged_params));
-  unmanaged_foreign_test_window_->Show();
-
   ash::Shell::GetPrimaryRootWindow()->ShowRootWindow();
+
+  ForeignTestWindow::CreateParams params;
+  ForeignTestWindow::Create(params);
 }
 
 void ShellBrowserMainParts::PostMainMessageLoopRun() {
@@ -162,8 +151,9 @@ void ShellBrowserMainParts::PostMainMessageLoopRun() {
   chromeos::PowerManagerHandler::Shutdown();
 #endif
 
-  foreign_window_manager_.reset();
   aura::Env::DeleteInstance();
+
+  ForeignWindowManager::DeleteInstance();
 
   // The keyboard may have created a WebContents. The WebContents is destroyed
   // with the UI, and it needs the BrowserContext to be alive during its

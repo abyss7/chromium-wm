@@ -191,7 +191,6 @@
       'sources': [
         '../ash/session_state_delegate_stub.cc',
         '../ash/session_state_delegate_stub.h',
-        '../ash/shell/app_list.cc',
         '../ash/shell/bubble.cc',
         '../ash/shell/context_menu.cc',
         '../ash/shell/context_menu.h',
@@ -218,17 +217,20 @@
         'host/foreign_test_window_host_linux.cc',
         'host/foreign_test_window_host_x11.cc',
         'host/foreign_test_window_host_x11.h',
+        'shell/app_list.cc',
         'shell/content_client/shell_browser_main_parts.cc',
         'shell/content_client/shell_browser_main_parts.h',
         'shell/content_client/shell_content_browser_client.cc',
         'shell/content_client/shell_content_browser_client.h',
         'shell/content_client/shell_main_delegate.cc',
         'shell/content_client/shell_main_delegate.h',
+        'shell/example_factory.h',
         'shell/shell_delegate_impl.cc',
         'shell/shell_delegate_impl.h',
         'shell/shell_main.cc',
         'shell/shell_main_parts.cc',
         'shell/shell_main_parts.h',
+        'shell/unmanaged_window.cc',
       ],
       'conditions': [
         ['OS=="linux"', {

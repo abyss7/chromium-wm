@@ -13,20 +13,22 @@
 
 namespace wm {
 class ForeignTestWindowHost;
-class ForeignWindowManager;
 
 // This class implements a foreign window to use for testing purposes.
 class ForeignTestWindow {
  public:
   struct CreateParams {
-    explicit CreateParams(ForeignWindowManager* window_manager);
+    CreateParams();
 
-    ForeignWindowManager* window_manager;
     gfx::Rect bounds;
     bool managed;
+    bool show;
   };
+
   explicit ForeignTestWindow(const CreateParams& params);
   virtual ~ForeignTestWindow();
+
+  static void Create(const CreateParams& params);
 
   void Destroy();
   void Hide();

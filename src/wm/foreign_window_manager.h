@@ -23,13 +23,22 @@ class ForeignWindowManagerHost;
 
 class ForeignWindowManager {
  public:
-  ForeignWindowManager();
-  virtual ~ForeignWindowManager();
+  // Instantiate window manager. Returns false if initialization failed.
+  static ForeignWindowManager* CreateInstance();
 
-  // Initialize window manager. Returns false if initialization failed.
+  // Instantiate window manager for testing. This always succeeds.
+  static ForeignWindowManager* CreateInstanceForTesting();
+
+  // Should never be called before |CreateInstance()|.
+  static ForeignWindowManager* GetInstance();
+
+  // Returns true if the window manager has been instantiated.
+  static bool HasInstance();
+
+  static void DeleteInstance();
+
   bool Initialize();
 
-  // Initialize window manager for testing. This always succeeds.
   void InitializeForTesting();
 
   // Create factory that produce RootWindowHost instances that support
@@ -49,6 +58,11 @@ class ForeignWindowManager {
   void CreateContainers(aura::RootWindow* root_window);
 
  private:
+  ForeignWindowManager();
+  virtual ~ForeignWindowManager();
+
+  static ForeignWindowManager* instance_;
+
   scoped_ptr<ForeignWindowManagerHost> host_;
   scoped_ptr<ash::ImageCursors> image_cursors_;
   bool initialized_;

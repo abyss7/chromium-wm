@@ -21,9 +21,6 @@ class WindowWatcher;
 }
 
 namespace wm {
-class ForeignTestWindow;
-class ForeignWindowManager;
-
 namespace shell {
 
 class ShellBrowserMainParts : public content::BrowserMainParts {
@@ -45,10 +42,7 @@ class ShellBrowserMainParts : public content::BrowserMainParts {
 
  private:
   scoped_ptr<content::ShellBrowserContext> browser_context_;
-  scoped_ptr<wm::ForeignWindowManager> foreign_window_manager_;
   scoped_ptr<ash::shell::WindowWatcher> window_watcher_;
-  scoped_ptr<wm::ForeignTestWindow> foreign_test_window_;
-  scoped_ptr<wm::ForeignTestWindow> unmanaged_foreign_test_window_;
 
   DISALLOW_COPY_AND_ASSIGN(ShellBrowserMainParts);
 };

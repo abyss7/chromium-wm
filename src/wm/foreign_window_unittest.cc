@@ -32,7 +32,7 @@ typedef wm::test::WmTestBase ForeignWindowTest;
 // Test that aura windows are added and removed correctly when creating and
 // destroying foreign windows.
 TEST_F(ForeignWindowTest, AddRemove) {
-  ForeignTestWindow::CreateParams params(foreign_window_manager());
+  ForeignTestWindow::CreateParams params;
   scoped_ptr<ForeignTestWindow> test_window1(new ForeignTestWindow(params));
   scoped_ptr<ForeignTestWindow> test_window2(new ForeignTestWindow(params));
   test_window1->Sync();
@@ -55,7 +55,7 @@ TEST_F(ForeignWindowTest, AddRemove) {
 // Test that aura window properties are updated correctly when foreign
 // is mapped/unmapped.
 TEST_F(ForeignWindowTest, IsVisible) {
-  ForeignTestWindow::CreateParams params(foreign_window_manager());
+  ForeignTestWindow::CreateParams params;
   scoped_ptr<ForeignTestWindow> test_window(new ForeignTestWindow(params));
   test_window->Sync();
   RunAllPendingInMessageLoop();
@@ -78,7 +78,7 @@ TEST_F(ForeignWindowTest, IsVisible) {
 // Test handling of unmanaged windows.
 TEST_F(ForeignWindowTest, Unmanaged) {
   gfx::Rect initial_bounds(10, 10, 200, 50);
-  ForeignTestWindow::CreateParams params(foreign_window_manager());
+  ForeignTestWindow::CreateParams params;
   params.bounds = initial_bounds;
   params.managed = false;
   scoped_ptr<ForeignTestWindow> test_window(new ForeignTestWindow(params));

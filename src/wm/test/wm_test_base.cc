@@ -50,9 +50,7 @@ void WmTestBase::SetUp() {
   TestShellDelegate* delegate = new TestShellDelegate;
 
   // Create the WM.
-  foreign_window_manager_.reset(new ForeignWindowManager);
-  foreign_window_manager_->InitializeForTesting();
-  delegate->SetForeignWindowManager(foreign_window_manager_.get());
+  ForeignWindowManager::CreateInstanceForTesting();
 
   // The global message center state must be initialized absent
   // g_browser_process.
@@ -69,7 +67,7 @@ void WmTestBase::SetUp() {
 
   ash::Shell::CreateInstance(delegate);
 
-  foreign_window_manager_->CreateContainers(
+  ForeignWindowManager::GetInstance()->CreateContainers(
       ash::Shell::GetPrimaryRootWindow());
 
   ash::Shell::GetPrimaryRootWindow()->Show();
@@ -98,7 +96,7 @@ void WmTestBase::TearDown() {
 #endif
 
   // Destroy the WM.
-  foreign_window_manager_.reset();
+  ForeignWindowManager::DeleteInstance();
 
   aura::Env::DeleteInstance();
   ui::TextInputTestSupport::Shutdown();
