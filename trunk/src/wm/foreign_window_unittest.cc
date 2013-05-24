@@ -140,17 +140,62 @@ TEST_F(ForeignWindowTest, Resize) {
       ash::Shell::GetPrimaryRootWindow(), tracker);
   ASSERT_EQ(1u, tracker.windows().size());
   aura::Window* window = *tracker.windows().begin();
+  views::Widget* widget =
+      ForeignWindow::GetForeignWindowForNativeView(window)->GetWidget();
   EXPECT_TRUE(window->IsVisible());
-  gfx::Size original_size(test_window->GetBounds().size());
-  gfx::Size new_size(original_size);
-  new_size.Enlarge(100, 100);
-  window->SetBounds(gfx::Rect(window->bounds().origin(), new_size));
+  gfx::Rect initial_bounds(test_window->GetBounds());
+  gfx::Rect new_bounds(initial_bounds);
+  new_bounds.Inset(-100, -100);
+  widget->SetBounds(
+      widget->non_client_view()->GetWindowBoundsForClientBounds(new_bounds));
   RunAllPendingInMessageLoop();
-  EXPECT_EQ(new_size.ToString(), test_window->GetBounds().size().ToString());
-  new_size.Enlarge(-200, -200);
-  window->SetBounds(gfx::Rect(window->bounds().origin(), new_size));
+  EXPECT_EQ(new_bounds.ToString(), test_window->GetBounds().ToString());
+  new_bounds.Inset(200, 200);
+  widget->SetBounds(
+      widget->non_client_view()->GetWindowBoundsForClientBounds(new_bounds));
   RunAllPendingInMessageLoop();
-  EXPECT_EQ(new_size.ToString(), test_window->GetBounds().size().ToString());
+  EXPECT_EQ(new_bounds.ToString(), test_window->GetBounds().ToString());
+}
+
+// Check if bounds change requests by foreign window are handled correctly.
+TEST_F(ForeignWindowTest, RequestSetBounds) {
+  ForeignTestWindow::CreateParams params;
+  scoped_ptr<ForeignTestWindow> test_window(new ForeignTestWindow(params));
+  test_window->Show();
+  test_window->Sync();
+  RunAllPendingInMessageLoop();
+  aura::WindowTracker tracker;
+  AddForeignWindowsToWindowTracker(
+      ash::Shell::GetPrimaryRootWindow(), tracker);
+  ASSERT_EQ(1u, tracker.windows().size());
+  aura::Window* window = *tracker.windows().begin();
+  EXPECT_TRUE(window->IsVisible());
+  // Check if window movement requests are handled correctly.
+  gfx::Rect initial_bounds(test_window->GetBounds());
+  gfx::Point new_origin(100, 100);
+  test_window->SetBounds(gfx::Rect(new_origin, initial_bounds.size()));
+  test_window->Sync();
+  RunAllPendingInMessageLoop();
+  EXPECT_EQ(new_origin.ToString(),
+            window->GetBoundsInRootWindow().origin().ToString());
+  // Check if window resize requests are handled correctly.
+  gfx::Size new_size(500, 500);
+  test_window->SetBounds(gfx::Rect(new_origin, new_size));
+  test_window->Sync();
+  RunAllPendingInMessageLoop();
+  EXPECT_EQ(new_size.ToString(),
+            window->GetBoundsInRootWindow().size().ToString());
+  // Check if window move+resize requests are handled correctly.
+  gfx::Rect new_bounds(50, 50, 200, 200);
+  test_window->SetBounds(new_bounds);
+  test_window->Sync();
+  RunAllPendingInMessageLoop();
+  EXPECT_EQ(new_bounds.ToString(),
+            window->GetBoundsInRootWindow().ToString());
+  test_window->Hide();
+  test_window->Sync();
+  RunAllPendingInMessageLoop();
+  EXPECT_FALSE(window->IsVisible());
 }
 
 }  // namespace test

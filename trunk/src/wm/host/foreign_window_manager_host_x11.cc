@@ -454,7 +454,31 @@ bool ForeignWindowManagerHostX11::Dispatch(const base::NativeEvent& event) {
       return true;
     }
     case ConfigureRequest: {
-      // TODO(reveman): Respect ConfigureRequest events.
+      ForeignWindowMap::iterator it = foreign_windows_.find(
+          event->xconfigurerequest.window);
+      if (it != foreign_windows_.end()) {
+        ForeignWindow* window = it->second;
+
+        DCHECK(window->IsManaged());
+
+        views::Widget* widget = window->GetWidget();
+        DCHECK(widget);
+
+        gfx::Rect bounds(widget->client_view()->GetBoundsInScreen());
+
+        // TODO(reveman): Respect stacking order.
+        if (event->xconfigurerequest.value_mask & CWX)
+          bounds.set_x(event->xconfigurerequest.x);
+        if (event->xconfigurerequest.value_mask & CWY)
+          bounds.set_y(event->xconfigurerequest.y);
+        if (event->xconfigurerequest.value_mask & CWWidth)
+          bounds.set_width(event->xconfigurerequest.width);
+        if (event->xconfigurerequest.value_mask & CWHeight)
+          bounds.set_height(event->xconfigurerequest.height);
+
+        widget->SetBounds(
+            widget->non_client_view()->GetWindowBoundsForClientBounds(bounds));
+      }
       return true;
     }
     case CirculateRequest: {
