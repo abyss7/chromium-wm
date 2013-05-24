@@ -5,6 +5,8 @@
 #ifndef WM_GPU_FOREIGN_WINDOW_TEXTURE_FACTORY_H_
 #define WM_GPU_FOREIGN_WINDOW_TEXTURE_FACTORY_H_
 
+#include <deque>
+
 #include "base/bind.h"
 #include "base/memory/ref_counted.h"
 #include "content/browser/renderer_host/image_transport_factory.h"
@@ -29,11 +31,10 @@ class ForeignWindowTextureFactoryObserver {
 
 // This class provides the interface for notifying the texture implementation
 // that contents has changed.
-class ForeignWindowTexture :
-    public ui::Texture,
-    public ForeignWindowTextureFactoryObserver {
+class ForeignWindowTexture : public ui::Texture,
+                             public ForeignWindowTextureFactoryObserver {
  public:
-  // ui::Texture overrides:
+  // Overridden from ui::Texture:
   virtual unsigned int PrepareTexture() OVERRIDE;
   virtual WebKit::WebGraphicsContext3D* HostContext3D() OVERRIDE;
 
@@ -42,6 +43,9 @@ class ForeignWindowTexture :
 
   // Indicate that foreign window contents have changed.
   void OnContentsChanged();
+
+  // Add callback that will run when PrepareTexture() is called.
+  void AddOnPrepareTextureCallback(const base::Closure& callback);
 
  protected:
   virtual ~ForeignWindowTexture();
@@ -56,11 +60,14 @@ class ForeignWindowTexture :
                        float device_scale_factor,
                        int32 image_id);
 
+  void RunOnPrepareTextureCallbacks();
+
   content::GpuChannelHostFactory* factory_;
   WebKit::WebGraphicsContext3D* host_context_;
   int32 image_id_;
   unsigned texture_id_;
   bool contents_changed_;
+  std::deque<base::Closure> on_prepare_texture_callbacks_;
 };
 
 // This class provides the interface for creating textures bound to foreign

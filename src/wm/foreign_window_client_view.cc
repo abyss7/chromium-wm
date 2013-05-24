@@ -4,8 +4,11 @@
 
 #include "wm/foreign_window_client_view.h"
 
+#include <map>
+#include <vector>
+
 #include "base/bind.h"
-#include "ui/aura/window.h"
+#include "ui/aura/root_window.h"
 #include "ui/aura/window_delegate.h"
 #include "ui/base/hit_test.h"
 #include "ui/gfx/canvas.h"
@@ -78,6 +81,10 @@ class WindowDelegateImpl : public aura::WindowDelegate {
   DISALLOW_COPY_AND_ASSIGN(WindowDelegateImpl);
 };
 
+void ReleaseTexture(scoped_refptr<ui::Texture> texture) {
+  // It's now safe to release texture.
+}
+
 }  // namespace
 
 namespace wm {
@@ -90,6 +97,7 @@ ForeignWindowClientView::ForeignWindowClientView(
       preferred_size_(preferred_size),
       window_visible_(false),
       window_destroyed_(false),
+      texture_is_valid_(false),
       pending_texture_created_count_(0) {
   ForeignWindowTextureFactory::GetInstance()->AddObserver(this);
   contents_view_.reset(new ContentsViewImpl);
@@ -101,9 +109,11 @@ ForeignWindowClientView::ForeignWindowClientView(
   window_->Init(ui::LAYER_TEXTURED);
   window_->layer()->SetMasksToBounds(true);
   window_->SetName("ForeignWindowClientView");
+  window_->AddObserver(this);
 }
 
 ForeignWindowClientView::~ForeignWindowClientView() {
+  window_->RemoveObserver(this);
   ForeignWindowTextureFactory::GetInstance()->RemoveObserver(this);
 }
 
@@ -118,6 +128,40 @@ gfx::Size ForeignWindowClientView::GetMinimumSize() {
 void ForeignWindowClientView::OnBoundsChanged(
     const gfx::Rect& previous_bounds) {
   window_->SetBounds(bounds());
+}
+
+void ForeignWindowClientView::OnWindowRemovingFromRootWindow(
+    aura::Window* window) {
+  RunOnCommitCallbacks();
+  ui::Compositor* compositor = GetCompositor();
+  if (compositor && compositor->HasObserver(this))
+    compositor->RemoveObserver(this);
+}
+
+void ForeignWindowClientView::OnCompositingDidCommit(
+    ui::Compositor* compositor) {
+  RunOnCommitCallbacks();
+}
+
+void ForeignWindowClientView::OnCompositingStarted(
+    ui::Compositor* compositor, base::TimeTicks start_time) {
+}
+
+void ForeignWindowClientView::OnCompositingEnded(ui::Compositor* compositor) {
+}
+
+void ForeignWindowClientView::OnCompositingAborted(
+    ui::Compositor* compositor) {
+}
+
+void ForeignWindowClientView::OnCompositingLockStateChanged(
+    ui::Compositor* compositor) {
+}
+
+void ForeignWindowClientView::OnUpdateVSyncParameters(
+    ui::Compositor* compositor,
+    base::TimeTicks timebase,
+    base::TimeDelta interval) {
 }
 
 void ForeignWindowClientView::OnLostResources() {
@@ -140,7 +184,7 @@ void ForeignWindowClientView::OnWindowContentsChanged() {
   if (pending_texture_created_count_)
     return;
 
-  if (texture_) {
+  if (texture_ && texture_is_valid_) {
     texture_->OnContentsChanged();
 
     GetNativeView()->SchedulePaintInRect(
@@ -155,20 +199,13 @@ void ForeignWindowClientView::OnWindowSizeChanged(const gfx::Size& size) {
     return;
 
   window_size_ = size;
-
-  if (window_visible_)
-    CreateTexture();
+  texture_is_valid_ = false;
 }
 
 void ForeignWindowClientView::OnWindowVisibilityChanged(bool visible) {
   window_visible_ = visible;
-
-  // Drop |texture_| reference when invisible to make sure texture is
-  // destroyed when no longer used by the compositor. Don't reset external
-  // texture for |window_| as that would prevent the compositor from
-  // drawing using this texture.
   if (!visible)
-    texture_ = NULL;
+    texture_is_valid_ = false;
 }
 
 void ForeignWindowClientView::OnWindowDestroyed() {
@@ -195,8 +232,38 @@ void ForeignWindowClientView::OnTextureCreated(
   if (!texture)
     return;
 
+  texture_is_valid_ = true;
+
+  // Hold on to old texture until we know it's no longer in use
+  // by the compositor.
+  texture->AddOnPrepareTextureCallback(
+      base::Bind(&ForeignWindowClientView::AddOnCommitCallback,
+                 AsWeakPtr(),
+                 base::Bind(&ReleaseTexture, texture_)));
+
   texture_ = texture;
   window_->SetExternalTexture(texture);
+}
+
+void ForeignWindowClientView::AddOnCommitCallback(
+    const base::Closure& callback) {
+  ui::Compositor* compositor = GetCompositor();
+  if (compositor && !compositor->HasObserver(this))
+    compositor->AddObserver(this);
+
+  on_commit_callbacks_.push_back(callback);
+}
+
+void ForeignWindowClientView::RunOnCommitCallbacks() {
+  while (!on_commit_callbacks_.empty()) {
+    on_commit_callbacks_.front().Run();
+    on_commit_callbacks_.pop_front();
+  }
+}
+
+ui::Compositor* ForeignWindowClientView::GetCompositor() {
+  aura::RootWindow* root_window = window_->GetRootWindow();
+  return root_window ? root_window->compositor() : NULL;
 }
 
 }  // namespace wm
