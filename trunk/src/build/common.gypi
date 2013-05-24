@@ -457,11 +457,13 @@
           'use_x11%': 1,
         }],
 
-        # Flags to use glib on non-Mac POSIX platforms.
+        # Flags to use pango and glib on non-Mac POSIX platforms.
         ['OS=="win" or OS=="mac" or OS=="ios" or OS=="android"', {
           'use_glib%': 0,
+          'use_pango%': 0,
         }, {
           'use_glib%': 1,
+          'use_pango%': 1,
         }],
 
         # We always use skia text rendering in Aura on Windows, since GDI
@@ -748,6 +750,7 @@
     'os_bsd%': '<(os_bsd)',
     'os_posix%': '<(os_posix)',
     'use_glib%': '<(use_glib)',
+    'use_pango%': '<(use_pango)',
     'use_ozone%': '<(use_ozone)',
     'toolkit_uses_gtk%': '<(toolkit_uses_gtk)',
     'use_x11%': '<(use_x11)',
@@ -934,9 +937,6 @@
     # sandbox the zygote process and, thus, all renderer processes.
     'linux_sandbox_path%': '',
 
-    # Set this to true to enable SELinux support.
-    'selinux%': 0,
-
     # Clang stuff.
     'clang%': '<(clang)',
     'make_clang_dir%': 'third_party/llvm-build/Release+Asserts',
@@ -971,6 +971,7 @@
 
     # Enable TCMalloc.
     'linux_use_tcmalloc%': 1,
+    'android_use_tcmalloc%': 0,
 
     # Disable TCMalloc's heapchecker.
     'linux_use_heapchecker%': 0,
@@ -1427,6 +1428,12 @@
         'use_cups%': 0,
       }],
 
+      ['enable_plugins==1 and (OS=="linux" or OS=="mac" or OS=="win" or google_tv==1)', {
+        'enable_pepper_cdms%': 1,
+      }, {
+        'enable_pepper_cdms%': 0,
+      }],
+
       # Native Client glibc toolchain is enabled
       # by default except on arm and mips.
       ['target_arch=="arm" or target_arch=="mipsel"', {
@@ -1512,7 +1519,7 @@
         ],
       }],
       ['OS=="android"', {
-        'grit_defines': ['-D', 'android',
+        'grit_defines': ['-t', 'android',
                          '-E', 'ANDROID_JAVA_TAGGED_ONLY=true'],
       }],
       ['OS=="mac"', {
@@ -1571,7 +1578,7 @@
         # See http://crbug.com/145503.
         'component': "static_library",
         # TODO(glider): we do not strip ASan binaries until the dynamic ASan
-        # runtime is fully adopted. See http://crbug.com/170629.
+        # runtime is fully adopted. See http://crbug.com/242503.
         'mac_strip_release': 0,
       }],
       ['tsan==1', {
@@ -1933,6 +1940,9 @@
       ['enable_viewport==1', {
         'defines': ['ENABLE_VIEWPORT'],
       }],
+      ['enable_pepper_cdms==1', {
+        'defines': ['ENABLE_PEPPER_CDMS'],
+      }],
       ['configuration_policy==1', {
         'defines': ['ENABLE_CONFIGURATION_POLICY'],
       }],
@@ -2023,9 +2033,6 @@
       ['dcheck_always_on!=0', {
         'defines': ['DCHECK_ALWAYS_ON=1'],
       }],  # dcheck_always_on!=0
-      ['selinux==1', {
-        'defines': ['CHROMIUM_SELINUX=1'],
-      }],
       ['win_use_allocator_shim==0', {
         'conditions': [
           ['OS=="win"', {
@@ -2598,6 +2605,11 @@
                   '<@(release_extra_cflags)',
                 ],
               }],
+            ],
+          }],
+          ['OS=="ios"', {
+            'defines': [
+              'NS_BLOCK_ASSERTIONS=1',
             ],
           }],
         ],
@@ -3248,7 +3260,7 @@
               }],
             ],
           }],
-          ['linux_use_tcmalloc==0', {
+          ['linux_use_tcmalloc==0 and android_use_tcmalloc==0', {
             'defines': ['NO_TCMALLOC'],
           }],
           ['linux_keep_shadow_stacks==1', {
@@ -3752,10 +3764,7 @@
                 '$(inherited)', '-std=gnu++11',
               ],
             }],
-            # TODO(thakis): Reenable plugins with once
-            # tools/clang/scripts/update.sh no longer pins clang to an ancient
-            # version for asan (http://crbug.com/170629)
-            ['clang==1 and clang_use_chrome_plugins==1 and asan!=1', {
+            ['clang==1 and clang_use_chrome_plugins==1', {
               'OTHER_CFLAGS': [
                 '<@(clang_chrome_plugins_flags)',
               ],
@@ -4007,6 +4016,9 @@
           # but keying off (or setting) 'clang' isn't valid for iOS as it
           # also seems to mean using the custom build of clang.
 
+          # TODO(stuartmorgan): switch to c++0x (see TODOs in the clang
+          # section above).
+          'CLANG_CXX_LANGUAGE_STANDARD': 'gnu++0x',
           # Don't use -Wc++0x-extensions, which Xcode 4 enables by default
           # when building with clang. This warning is triggered when the
           # override keyword is used via the OVERRIDE macro from
@@ -4024,9 +4036,9 @@
             '-Wno-unused-function',
             # See comments on this flag higher up in this file.
             '-Wno-unnamed-type-template-args',
-            # This (rightfully) complains about 'override', which we use
-            # heavily.
-            '-Wno-c++11-extensions',
+            # Match OS X clang C++11 warning settings.
+            '-Wno-c++11-narrowing',
+            '-Wno-reserved-user-defined-literal',
           ],
         },
         'target_conditions': [
@@ -4059,17 +4071,10 @@
                 },
               },
             },
-            'xcode_settings': {
-              # It is necessary to link with the -fobjc-arc flag to use
-              # subscripting on iOS < 6.
-              'OTHER_LDFLAGS': [
-                '-fobjc-arc',
-              ],
-            },
             'conditions': [
-              # TODO(justincohen): ninja builds don't support signing yet.
-              ['"<(GENERATOR)"!="ninja"', {
+              ['"<(GENERATOR)"=="xcode"', {
                 'xcode_settings': {
+                  # TODO(justincohen): ninja builds don't support signing yet.
                   'conditions': [
                     ['chromium_ios_signing', {
                       # iOS SDK wants everything for device signed.
@@ -4080,6 +4085,59 @@
                     }],
                   ],
                 },
+              }],
+              ['"<(GENERATOR)"=="xcode" and clang!=1', {
+                'xcode_settings': {
+                  # It is necessary to link with the -fobjc-arc flag to use
+                  # subscripting on iOS < 6.
+                  'OTHER_LDFLAGS': [
+                    '-fobjc-arc',
+                  ],
+                },
+              }],
+              ['clang==1', {
+                'target_conditions': [
+                  ['_toolset=="target"', {
+                    'variables': {
+                      'developer_dir': '<!(xcode-select -print-path)',
+                      'arc_toolchain_path': '<(developer_dir)/Toolchains/XcodeDefault.xctoolchain/usr/lib/arc',
+                    },
+                    # It is necessary to force load libarclite from Xcode for
+                    # third_party/llvm-build because libarclite_* is only
+                    # distributed by Xcode.
+                    'conditions': [
+                      ['"<(GENERATOR)"=="ninja" and target_arch=="armv7"', {
+                        'xcode_settings': {
+                          'OTHER_LDFLAGS': [
+                            '-force_load',
+                            '<(arc_toolchain_path)/libarclite_iphoneos.a',
+                          ],
+                        },
+                      }],
+                      ['"<(GENERATOR)"=="ninja" and target_arch!="armv7"', {
+                        'xcode_settings': {
+                          'OTHER_LDFLAGS': [
+                            '-force_load',
+                            '<(arc_toolchain_path)/libarclite_iphonesimulator.a',
+                          ],
+                        },
+                      }],
+                      # Xcode sets target_arch at compile-time.
+                      ['"<(GENERATOR)"=="xcode"', {
+                        'xcode_settings': {
+                          'OTHER_LDFLAGS[arch=armv7]': [
+                            '-force_load',
+                            '<(arc_toolchain_path)/libarclite_iphoneos.a',
+                          ],
+                          'OTHER_LDFLAGS[arch=i386]': [
+                            '-force_load',
+                            '<(arc_toolchain_path)/libarclite_iphonesimulator.a',
+                          ],
+                        },
+                      }],
+                    ],
+                  }],
+                ],
               }],
             ],
           }],
