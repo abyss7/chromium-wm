@@ -31,7 +31,7 @@
 #elif defined(__linux__)
 #define OS_LINUX 1
 // Use TOOLKIT_GTK on linux if TOOLKIT_VIEWS isn't defined.
-#if !defined(TOOLKIT_VIEWS)
+#if !defined(TOOLKIT_VIEWS) && defined(USE_X11)
 #define TOOLKIT_GTK
 #endif
 #elif defined(_WIN32)
@@ -66,11 +66,6 @@
     defined(OS_OPENBSD) || defined(OS_SOLARIS) || defined(OS_ANDROID) ||  \
     defined(OS_NACL)
 #define OS_POSIX 1
-#endif
-
-#if defined(OS_POSIX) && !defined(OS_MACOSX) && !defined(OS_ANDROID) && \
-    !defined(OS_NACL) && !defined(USE_MESSAGEPUMP_LINUX)
-#define USE_X11 1  // Use X for graphics.
 #endif
 
 // Use tcmalloc

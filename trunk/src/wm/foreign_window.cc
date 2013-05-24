@@ -36,8 +36,7 @@ ForeignWindow::CreateParams::CreateParams(
 }
 
 ForeignWindow::ForeignWindow(const CreateParams& params)
-    : ALLOW_THIS_IN_INITIALIZER_LIST(
-        host_(CreateHost(this, params.window_handle))),
+    : host_(CreateHost(this, params.window_handle)),
       preferred_size_(params.preferred_size),
       managed_(params.managed),
       display_state_(DISPLAY_WITHDRAWN),

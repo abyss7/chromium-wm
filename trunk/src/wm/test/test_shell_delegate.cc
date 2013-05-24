@@ -128,6 +128,9 @@ bool TestShellDelegate::ShouldAlwaysShowAccessibilityMenu() const {
   return false;
 }
 
+void TestShellDelegate::SilenceSpokenFeedback() const {
+}
+
 app_list::AppListViewDelegate* TestShellDelegate::CreateAppListViewDelegate() {
   return NULL;
 }
