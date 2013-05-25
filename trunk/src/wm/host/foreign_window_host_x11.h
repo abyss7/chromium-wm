@@ -35,6 +35,8 @@ class ForeignWindowHostX11 : public ForeignWindowHost,
   Display* xdisplay_;
   gfx::PluginWindowHandle window_handle_;
   ForeignWindowHostDelegate* delegate_;
+  int damage_event_base_;
+  int damage_error_base_;
 
   ui::X11AtomCache atom_cache_;
 

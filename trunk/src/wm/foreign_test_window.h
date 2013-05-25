@@ -34,6 +34,7 @@ class ForeignTestWindow {
   void Hide();
   void SetBounds(const gfx::Rect& bounds);
   gfx::Rect GetBounds();
+  void ChangeContents(const gfx::Rect& area);
   void Show();
   void Sync();
 

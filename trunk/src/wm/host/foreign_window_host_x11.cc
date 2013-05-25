@@ -26,8 +26,13 @@ ForeignWindowHostX11::ForeignWindowHostX11(
     : xdisplay_(base::MessagePumpAuraX11::GetDefaultXDisplay()),
       window_handle_(window_handle),
       delegate_(NULL),
+      damage_event_base_(0),
+      damage_error_base_(0),
       atom_cache_(xdisplay_, kAtomsToCache) {
+  DCHECK(XDamageQueryExtension(
+             xdisplay_, &damage_event_base_, &damage_error_base_));
   DCHECK(window_handle_);
+
   // Damage resource is automatically freed when the window is destroyed or
   // we close our connection to the X server.
   ForeignWindowManagerHostX11::IgnoreX11Error(NextRequest(xdisplay_));
@@ -78,9 +83,16 @@ void ForeignWindowHostX11::OnWindowDestroyed() {
 }
 
 bool ForeignWindowHostX11::Dispatch(const base::NativeEvent& event) {
+  XEvent* xev = event;
+
   DCHECK(window_handle_);
-  // TODO(reveman): Only schedule repaint of the area that was damaged.
-  delegate_->OnWindowContentsChanged();
+  DCHECK_EQ(damage_event_base_ + XDamageNotify, xev->type);
+
+  XDamageNotifyEvent* xdamage = reinterpret_cast<XDamageNotifyEvent*>(xev);
+  delegate_->OnWindowContentsChanged(gfx::Rect(xdamage->area.x,
+                                               xdamage->area.y,
+                                               xdamage->area.width,
+                                               xdamage->area.height));
   return true;
 }
 

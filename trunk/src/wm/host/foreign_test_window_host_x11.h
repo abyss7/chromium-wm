@@ -44,6 +44,7 @@ class ForeignTestWindowHostX11 : public ForeignTestWindowHost,
   virtual void Sync() OVERRIDE;
   virtual void SetBounds(const gfx::Rect& bounds) OVERRIDE;
   virtual void GetBounds(gfx::Rect* bounds) OVERRIDE;
+  virtual void ChangeContents(const gfx::Rect& area) OVERRIDE;
   virtual void AddOnDestroyCallback(const base::Closure& callback) OVERRIDE;
 
   // Overridden from MessageLoopForIO::Watcher:

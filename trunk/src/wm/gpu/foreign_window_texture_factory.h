@@ -13,9 +13,13 @@
 #include "ui/compositor/compositor.h"
 #include "ui/gfx/native_widget_types.h"
 
+namespace cc {
+class ContextProvider;
+}
+
 namespace content {
 class GpuChannelHostFactory;
-};
+}
 
 namespace wm {
 
@@ -54,7 +58,7 @@ class ForeignWindowTexture : public ui::Texture,
   friend class ForeignWindowTextureFactory;
 
   ForeignWindowTexture(content::GpuChannelHostFactory* factory,
-                       WebKit::WebGraphicsContext3D* host_context,
+                       cc::ContextProvider* context_provider,
                        bool flipped,
                        const gfx::Size& size,
                        float device_scale_factor,
@@ -63,7 +67,7 @@ class ForeignWindowTexture : public ui::Texture,
   void RunOnPrepareTextureCallbacks();
 
   content::GpuChannelHostFactory* factory_;
-  WebKit::WebGraphicsContext3D* host_context_;
+  scoped_refptr<cc::ContextProvider> context_provider_;
   int32 image_id_;
   unsigned texture_id_;
   bool contents_changed_;
@@ -108,6 +112,7 @@ class ForeignWindowTextureFactory
   int GenerateImageID();
 
   void OnImageCreated(const CreateTextureCallback& callback,
+                      scoped_refptr<cc::ContextProvider> context_provider,
                       bool flipped,
                       float device_scale_factor,
                       int32 image_id,

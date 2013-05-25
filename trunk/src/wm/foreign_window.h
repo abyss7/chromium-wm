@@ -43,7 +43,7 @@ class ForeignWindow : public base::RefCounted<ForeignWindow>,
       gfx::NativeView native_view);
 
   // Overridden from wm::ForeignWindowHostDelegate:
-  virtual void OnWindowContentsChanged() OVERRIDE;
+  virtual void OnWindowContentsChanged(const gfx::Rect& area) OVERRIDE;
 
   // Overridden from views::WidgetDelegate:
   virtual views::Widget* GetWidget() OVERRIDE;

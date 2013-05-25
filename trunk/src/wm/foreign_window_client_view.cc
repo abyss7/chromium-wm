@@ -180,15 +180,14 @@ gfx::NativeView ForeignWindowClientView::GetNativeView() const {
   return window_.get();
 }
 
-void ForeignWindowClientView::OnWindowContentsChanged() {
+void ForeignWindowClientView::OnWindowContentsChanged(const gfx::Rect& area) {
   if (pending_texture_created_count_)
     return;
 
   if (texture_ && texture_is_valid_) {
     texture_->OnContentsChanged();
 
-    GetNativeView()->SchedulePaintInRect(
-        gfx::Rect(GetNativeView()->bounds().size()));
+    GetNativeView()->SchedulePaintInRect(area);
   } else {
     CreateTexture();
   }

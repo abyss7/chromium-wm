@@ -5,13 +5,15 @@
 #ifndef WM_HOST_FOREIGN_WINDOW_HOST_DELEGATE_H_
 #define WM_HOST_FOREIGN_WINDOW_HOST_DELEGATE_H_
 
+#include "ui/gfx/rect.h"
+
 namespace wm {
 
 // A private interface used by ForeignWindowHost implementations to communicate
 // with their owning ForeignWindow.
 class ForeignWindowHostDelegate {
  public:
-  virtual void OnWindowContentsChanged() = 0;
+  virtual void OnWindowContentsChanged(const gfx::Rect& area) = 0;
 
  protected:
   virtual ~ForeignWindowHostDelegate() {}
