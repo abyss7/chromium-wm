@@ -1,5 +1,6 @@
 include_rules = [
   "+ash",
+  "+cc",
   "+content/public",
   "+ui",
 ]

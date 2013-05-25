@@ -6,6 +6,7 @@
 
 #include "base/lazy_instance.h"
 #include "base/observer_list.h"
+#include "cc/output/context_provider.h"
 #include "content/browser/gpu/browser_gpu_channel_host_factory.h"
 #include "content/common/gpu/client/gl_helper.h"
 #include "third_party/WebKit/Source/Platform/chromium/public/WebGraphicsContext3D.h"
@@ -48,7 +49,7 @@ class DefaultGpuChannelHostFactory : public content::GpuChannelHostFactory {
       gfx::PluginWindowHandle window_handle,
       int32 image_id,
       const CreateImageCallback& callback) OVERRIDE {
-    callback.Run(gfx::Size());
+    callback.Run(gfx::Size(1, 1));
   }
   virtual void DeleteImage(int32 image_id, int32 sync_point) OVERRIDE {}
 };
@@ -65,14 +66,14 @@ ForeignWindowTextureFactory* ForeignWindowTextureFactory::instance_ = NULL;
 
 ForeignWindowTexture::ForeignWindowTexture(
     content::GpuChannelHostFactory* factory,
-    WebKit::WebGraphicsContext3D* host_context,
+    cc::ContextProvider* context_provider,
     bool flipped,
     const gfx::Size& size,
     float device_scale_factor,
     int32 image_id)
     : ui::Texture(flipped, size, device_scale_factor),
       factory_(factory),
-      host_context_(host_context),
+      context_provider_(context_provider),
       image_id_(image_id),
       texture_id_(0),
       contents_changed_(true) {
@@ -81,27 +82,29 @@ ForeignWindowTexture::ForeignWindowTexture(
 
 ForeignWindowTexture::~ForeignWindowTexture() {
   ForeignWindowTextureFactory::GetInstance()->RemoveObserver(this);
+  WebKit::WebGraphicsContext3D* context = context_provider_->Context3d();
   if (texture_id_)
-    host_context_->deleteTexture(texture_id_);
-  if (image_id_ && !host_context_->isContextLost()) {
-    factory_->DeleteImage(image_id_,
-                          texture_id_ ? host_context_->insertSyncPoint() : 0);
+    context->deleteTexture(texture_id_);
+  if (image_id_ && !context->isContextLost()) {
+    factory_->DeleteImage(
+        image_id_, texture_id_ ? context->insertSyncPoint() : 0);
   }
 }
 
 unsigned int ForeignWindowTexture::PrepareTexture() {
   if (contents_changed_) {
+    WebKit::WebGraphicsContext3D* context = context_provider_->Context3d();
     unsigned texture_id = texture_id_;
 
     if (!texture_id)
-      texture_id = host_context_->createTexture();
+      texture_id = context->createTexture();
 
-    host_context_->bindTexture(GL_TEXTURE_2D, texture_id);
+    context->bindTexture(GL_TEXTURE_2D, texture_id);
     if (texture_id_)
-      host_context_->releaseTexImage2DCHROMIUM(GL_TEXTURE_2D, image_id_);
-    host_context_->bindTexImage2DCHROMIUM(GL_TEXTURE_2D, image_id_);
-    host_context_->bindTexture(GL_TEXTURE_2D, 0);
-    host_context_->flush();
+      context->releaseTexImage2DCHROMIUM(GL_TEXTURE_2D, image_id_);
+    context->bindTexImage2DCHROMIUM(GL_TEXTURE_2D, image_id_);
+    context->bindTexture(GL_TEXTURE_2D, 0);
+    context->flush();
 
     texture_id_ = texture_id;
     contents_changed_ = false;
@@ -113,18 +116,12 @@ unsigned int ForeignWindowTexture::PrepareTexture() {
 }
 
 WebKit::WebGraphicsContext3D* ForeignWindowTexture::HostContext3D() {
-  DCHECK(host_context_);  // This should never be called after lost context.
-  return host_context_;
+  return context_provider_->Context3d();
 }
 
 void ForeignWindowTexture::OnLostResources() {
-  if (texture_id_) {
-    host_context_->deleteTexture(texture_id_);
-    texture_id_ = 0;
-  }
   contents_changed_ = false;
   image_id_ = 0;
-  host_context_ = NULL;
 }
 
 void ForeignWindowTexture::OnContentsChanged() {
@@ -156,14 +153,6 @@ ForeignWindowTextureFactory::~ForeignWindowTextureFactory() {
 }
 
 void ForeignWindowTextureFactory::OnLostResources() {
-  content::ImageTransportFactory* transport_factory =
-      content::ImageTransportFactory::GetInstance();
-  // Make sure a new gpu channel is established before any calls to
-  // CreateTextureForForeignWindow() are made.
-  WebKit::WebGraphicsContext3D* context =
-      transport_factory->GetGLHelper()->context();
-  CHECK(context);
-
   FOR_EACH_OBSERVER(ForeignWindowTextureFactoryObserver,
                     observer_list_,
                     OnLostResources());
@@ -176,6 +165,11 @@ void ForeignWindowTextureFactory::CreateTextureForForeignWindow(
     const CreateTextureCallback& callback) {
   DCHECK(window_handle);
 
+  CHECK(ui::ContextFactory::GetInstance());
+  ui::ContextFactory* context_factory = ui::ContextFactory::GetInstance();
+  scoped_refptr<cc::ContextProvider> context_provider(
+      context_factory->OffscreenContextProviderForMainThread());
+
   int32 image_id = GenerateImageID();
   factory_->CreateImage(
       window_handle,
@@ -183,6 +177,7 @@ void ForeignWindowTextureFactory::CreateTextureForForeignWindow(
       base::Bind(&ForeignWindowTextureFactory::OnImageCreated,
                  base::Unretained(this),
                  callback,
+                 context_provider,
                  flipped,
                  device_scale_factor,
                  image_id));
@@ -205,6 +200,7 @@ int ForeignWindowTextureFactory::GenerateImageID() {
 
 void ForeignWindowTextureFactory::OnImageCreated(
     const CreateTextureCallback& callback,
+    scoped_refptr<cc::ContextProvider> context_provider,
     bool flipped,
     float device_scale_factor,
     int32 image_id,
@@ -214,11 +210,9 @@ void ForeignWindowTextureFactory::OnImageCreated(
     return;
   }
 
-  content::ImageTransportFactory* transport_factory =
-      content::ImageTransportFactory::GetInstance();
   scoped_refptr<ForeignWindowTexture> texture(
       new ForeignWindowTexture(factory_,
-                               transport_factory->GetGLHelper()->context(),
+                               context_provider,
                                flipped,
                                size,
                                device_scale_factor,

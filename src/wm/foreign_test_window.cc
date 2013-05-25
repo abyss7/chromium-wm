@@ -68,6 +68,10 @@ void GetBoundsOnIO(ForeignTestWindowHost* host, gfx::Rect* bounds) {
   host->GetBounds(bounds);
 }
 
+void ChangeContentsOnIO(ForeignTestWindowHost* host, const gfx::Rect& area) {
+  host->ChangeContents(area);
+}
+
 void AddOnDestroyCallbackOnIO(ForeignTestWindowHost* host,
                               const base::Closure& callback) {
   host->AddOnDestroyCallback(callback);
@@ -174,6 +178,12 @@ gfx::Rect ForeignTestWindow::GetBounds() {
                                   base::Unretained(&run_loop)));
   run_loop.Run();
   return host_bounds;
+}
+
+void ForeignTestWindow::ChangeContents(const gfx::Rect& area) {
+  g_foreign_test_window_thread.Pointer()->message_loop_proxy()->PostTask(
+      FROM_HERE,
+      base::Bind(&ChangeContentsOnIO, host_, area));
 }
 
 }  // namespace wm

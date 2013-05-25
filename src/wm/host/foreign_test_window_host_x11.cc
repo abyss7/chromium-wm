@@ -114,6 +114,17 @@ void ForeignTestWindowHostX11::GetBounds(gfx::Rect* bounds) {
   *bounds = bounds_;
 }
 
+void ForeignTestWindowHostX11::ChangeContents(const gfx::Rect& area) {
+  XClearArea(display_,
+             window_,
+             area.x(),
+             area.y(),
+             area.width(),
+             area.height(),
+             true);
+  XFlush(display_);
+}
+
 void ForeignTestWindowHostX11::AddOnDestroyCallback(
     const base::Closure& callback) {
   on_destroy_callbacks_.push_back(callback);
@@ -128,9 +139,6 @@ void ForeignTestWindowHostX11::ProcessXEvent(XEvent *event) {
       break;
     }
     case Expose: {
-      if (event->xexpose.count != 0)
-        break;
-
       std::string message("Hello, X Window System!");
 
       // Center text.
@@ -140,6 +148,11 @@ void ForeignTestWindowHostX11::ProcessXEvent(XEvent *event) {
       int font_height = font_info_->ascent + font_info_->descent;
       int msg_y  = (bounds_.height() + font_height) / 2;
 
+      XRectangle rectangle = { event->xexpose.x,
+                               event->xexpose.y,
+                               event->xexpose.width,
+                               event->xexpose.height };
+      XSetClipRectangles(display_, gc_, 0, 0, &rectangle, 1, YXBanded);
       XDrawString(display_,
                   window_,
                   gc_,

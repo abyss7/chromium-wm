@@ -4,10 +4,13 @@
 
 #include "wm/foreign_window.h"
 
+#include "cc/base/region.h"
 #include "ui/aura/root_window.h"
+#include "ui/aura/window_observer.h"
 #include "ui/aura/window_tracker.h"
 #include "ui/views/widget/widget.h"
 #include "wm/foreign_test_window.h"
+#include "wm/gpu/foreign_window_texture_factory.h"
 #include "wm/test/wm_test_base.h"
 
 namespace wm {
@@ -218,6 +221,71 @@ TEST_F(ForeignWindowTest, CloseWindow) {
   test_window->Sync();
   RunAllPendingInMessageLoop();
   EXPECT_EQ(0u, tracker.windows().size());
+}
+
+class SchedulePaintTracker : public aura::WindowObserver {
+ public:
+  SchedulePaintTracker(aura::Window* window) : window_(window) {
+    window_->AddObserver(this);
+  }
+  ~SchedulePaintTracker() {
+    window_->RemoveObserver(this);
+  }
+
+  // Overridden from aura::WindowObserver:
+  virtual void OnWindowPaintScheduled(aura::Window* window,
+                                      const gfx::Rect& region) OVERRIDE {
+    paint_scheduled_.Union(region);
+  }
+
+  const cc::Region& paint_scheduled() const { return paint_scheduled_; }
+
+ private:
+  aura::Window* window_;
+  cc::Region paint_scheduled_;
+};
+
+// Test contents changes.
+TEST_F(ForeignWindowTest, ContentsChanges) {
+  ForeignTestWindow::CreateParams params;
+  params.bounds = gfx::Rect(0, 0, 20, 20);
+  scoped_ptr<ForeignTestWindow> test_window(new ForeignTestWindow(params));
+  test_window->Show();
+  test_window->Sync();
+  RunAllPendingInMessageLoop();
+  aura::WindowTracker tracker;
+  AddForeignWindowsToWindowTracker(
+      ash::Shell::GetPrimaryRootWindow(), tracker);
+  ASSERT_EQ(1u, tracker.windows().size());
+  aura::Window* window = *tracker.windows().begin();
+  EXPECT_TRUE(window->IsVisible());
+  // Change contents of top-left corner.
+  SchedulePaintTracker small_repaint(window);
+  gfx::Rect top_left(0, 0, 10, 10);
+  test_window->ChangeContents(top_left);
+  test_window->Sync();
+  RunAllPendingInMessageLoop();
+  EXPECT_TRUE(small_repaint.paint_scheduled().Contains(top_left));
+  // Change contents of top-left corner and center.
+  SchedulePaintTracker medium_repaint(window);
+  gfx::Rect center(5, 5, 10, 10);
+  test_window->ChangeContents(top_left);
+  test_window->ChangeContents(center);
+  test_window->Sync();
+  RunAllPendingInMessageLoop();
+  EXPECT_TRUE(medium_repaint.paint_scheduled().Contains(top_left));
+  EXPECT_TRUE(medium_repaint.paint_scheduled().Contains(center));
+  // Change contents of top-left corner, center and bottom-right corner.
+  SchedulePaintTracker large_repaint(window);
+  gfx::Rect bottom_right(10, 10, 10, 10);
+  test_window->ChangeContents(top_left);
+  test_window->ChangeContents(center);
+  test_window->ChangeContents(bottom_right);
+  test_window->Sync();
+  RunAllPendingInMessageLoop();
+  EXPECT_TRUE(large_repaint.paint_scheduled().Contains(top_left));
+  EXPECT_TRUE(large_repaint.paint_scheduled().Contains(center));
+  EXPECT_TRUE(large_repaint.paint_scheduled().Contains(bottom_right));
 }
 
 }  // namespace test

@@ -50,11 +50,11 @@ ForeignWindow::~ForeignWindow() {
   client_view_->GetNativeView()->ClearProperty(kForeignWindowKey);
 }
 
-void ForeignWindow::OnWindowContentsChanged() {
+void ForeignWindow::OnWindowContentsChanged(const gfx::Rect& area) {
   if (!client_view_)
     return;
 
-  client_view_->OnWindowContentsChanged();
+  client_view_->OnWindowContentsChanged(area);
 }
 
 views::WidgetDelegate* ForeignWindow::CreateWidgetDelegate() {

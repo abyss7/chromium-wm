@@ -52,7 +52,7 @@ class ForeignWindowClientView
   gfx::NativeView GetNativeView() const;
 
   // Called when foreign window contents have changed.
-  void OnWindowContentsChanged();
+  void OnWindowContentsChanged(const gfx::Rect& area);
 
   // Called when foreign window size has changed.
   void OnWindowSizeChanged(const gfx::Size& size);
