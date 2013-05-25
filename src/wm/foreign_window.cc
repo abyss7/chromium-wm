@@ -4,6 +4,7 @@
 
 #include "wm/foreign_window.h"
 
+#include "ash/wm/custom_frame_view_ash.h"
 #include "ash/wm/panels/panel_frame_view.h"
 #include "ui/aura/window.h"
 #include "ui/aura/window_property.h"
@@ -78,10 +79,12 @@ views::ClientView* ForeignWindow::CreateClientView(views::Widget* widget) {
 
 views::NonClientFrameView* ForeignWindow::CreateNonClientFrameView(
     views::Widget* widget) {
-  return new ash::PanelFrameView(widget,
-                                 managed_ ?
-                                 ash::PanelFrameView::FRAME_ASH :
-                                 ash::PanelFrameView::FRAME_NONE);
+  if (!managed_)
+    return new ash::PanelFrameView(widget, ash::PanelFrameView::FRAME_NONE);
+
+  ash::CustomFrameViewAsh* frame = new ash::CustomFrameViewAsh;
+  frame->Init(widget);
+  return frame;
 }
 
 views::Widget* ForeignWindow::GetWidget() {
