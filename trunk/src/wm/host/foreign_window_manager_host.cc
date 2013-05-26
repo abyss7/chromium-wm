@@ -27,6 +27,8 @@ class ForeignWindowManagerHostImpl : public ForeignWindowManagerHost {
   }
   virtual void SetDefaultCursor(gfx::NativeCursor cursor) OVERRIDE {}
 
+  virtual void ShowForeignWindows() OVERRIDE {}
+
  private:
   scoped_ptr<ash::RootWindowHostFactory> factory_;
 };

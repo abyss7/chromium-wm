@@ -47,6 +47,7 @@ class ForeignWindowManagerHostX11
       const gfx::Rect& initial_bounds) OVERRIDE;
   virtual gfx::AcceleratedWidget GetAcceleratedWidget() OVERRIDE;
   virtual void SetDefaultCursor(gfx::NativeCursor cursor) OVERRIDE;
+  virtual void ShowForeignWindows() OVERRIDE;
 
   // Overridden from MessageLoop::Dispatcher:
   virtual bool Dispatch(const base::NativeEvent& event) OVERRIDE;
@@ -92,6 +93,9 @@ class ForeignWindowManagerHostX11
 
   // The bounds of |xwindow_|.
   gfx::Rect bounds_;
+
+  typedef std::map< ::Window, XWindowAttributes> WindowAttributesMap;
+  WindowAttributesMap initial_window_attributes_;
 
   typedef base::hash_map< ::Window, scoped_refptr<ForeignWindow> >
       ForeignWindowMap;

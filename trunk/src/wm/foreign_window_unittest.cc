@@ -148,12 +148,12 @@ TEST_F(ForeignWindowTest, Resize) {
   EXPECT_TRUE(window->IsVisible());
   gfx::Rect initial_bounds(test_window->GetBounds());
   gfx::Rect new_bounds(initial_bounds);
-  new_bounds.Inset(-100, -100);
+  new_bounds.Inset(100, 100);
   widget->SetBounds(
       widget->non_client_view()->GetWindowBoundsForClientBounds(new_bounds));
   RunAllPendingInMessageLoop();
   EXPECT_EQ(new_bounds.ToString(), test_window->GetBounds().ToString());
-  new_bounds.Inset(200, 200);
+  new_bounds.Inset(-50, -50);
   widget->SetBounds(
       widget->non_client_view()->GetWindowBoundsForClientBounds(new_bounds));
   RunAllPendingInMessageLoop();

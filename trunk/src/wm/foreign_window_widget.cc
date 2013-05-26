@@ -50,9 +50,14 @@ void ForeignWindowWidget::Close() {
 }
 
 // static
-views::Widget* ForeignWindowWidget::CreateWindow(
-    ForeignWindow* foreign_window) {
-  return new ForeignWindowWidget(foreign_window);
+views::Widget* ForeignWindowWidget::CreateWindowWithBounds(
+    ForeignWindow* foreign_window,
+    const gfx::Rect& bounds) {
+  views::Widget* widget = new ForeignWindowWidget(foreign_window);
+  DCHECK(widget->non_client_view());
+  widget->SetBounds(
+      widget->non_client_view()->GetWindowBoundsForClientBounds(bounds));
+  return widget;
 }
 
 }  // namespace wm

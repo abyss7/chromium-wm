@@ -136,6 +136,27 @@ gfx::Vector2d GetTargetOffsetInRootWindow(const aura::Window* window) {
   return offset;
 }
 
+void GetWindowAttributesForAllChildren(
+    Display* display,
+    ::Window window,
+    std::map< ::Window, XWindowAttributes>* window_attributes) {
+  ::Window root;
+  ::Window parent;
+  ::Window* children = NULL;
+  unsigned num_children = 0;
+  if (!XQueryTree(display, window, &root, &parent, &children, &num_children))
+    return;
+
+  for (unsigned i = 0; i < num_children; ++i) {
+    XWindowAttributes attributes;
+    if (!XGetWindowAttributes(display, children[i], &attributes))
+      continue;
+    (*window_attributes)[children[i]] = attributes;
+  }
+
+  XFree(children);
+}
+
 }  // namespace
 
 ForeignWindowManagerHostX11::ForeignWindowManagerHostX11()
@@ -186,11 +207,26 @@ bool ForeignWindowManagerHostX11::Initialize() {
 
   long event_mask = StructureNotifyMask |
                     SubstructureNotifyMask | SubstructureRedirectMask;
-  // Select for WM events.
+
+  // Grab server while selecting for events and retrieving the current
+  // state of all child windows.
+  XGrabServer(xdisplay_);
+
+  // This selects for events. All child window changes will produce
+  // events from now on.
   XSelectInput(xdisplay_, xwindow_, event_mask);
+
+  // Get a list of all children and their current attributes.
+  GetWindowAttributesForAllChildren(
+      xdisplay_, xwindow_, &initial_window_attributes_);
+
+  // We now have all child attributes we need. It's safe to release
+  // the server grab.
+  XUngrabServer(xdisplay_);
 
   // Redirect all sub-windows.
   XCompositeRedirectSubwindows(xdisplay_, xwindow_, CompositeRedirectManual);
+
   return true;
 }
 
@@ -298,8 +334,40 @@ void ForeignWindowManagerHostX11::SetDefaultCursor(
   XDefineCursor(xdisplay_, xwindow_, cursor.platform());
 }
 
+void ForeignWindowManagerHostX11::ShowForeignWindows() {
+  for (WindowAttributesMap::iterator it = initial_window_attributes_.begin();
+       it != initial_window_attributes_.end(); ++it) {
+    int border_size = it->second.border_width * 2;
+    gfx::Rect bounds(it->second.x,
+                     it->second.y,
+                     it->second.width + border_size,
+                     it->second.height + border_size);
+
+    // Create a foreign window for this X window.
+    ForeignWindow::CreateParams params(it->first, bounds.size());
+    params.managed = !it->second.override_redirect;
+    scoped_refptr<ForeignWindow> window(new ForeignWindow(params));
+
+    // Create top level window widget.
+    views::Widget* widget = ForeignWindowWidget::CreateWindowWithBounds(
+        window, bounds);
+    if (it->second.map_state != IsUnmapped) {
+      widget->Show();
+      window->OnWindowVisibilityChanged(true);
+    }
+
+    // Add foreign window to map.
+    foreign_windows_[it->first] = window.get();
+  }
+  initial_window_attributes_.clear();
+}
+
 bool ForeignWindowManagerHostX11::Dispatch(const base::NativeEvent& event) {
   XEvent* xev = event;
+
+  // ShowForeignWindows() needs to be called before we start
+  // processing events.
+  DCHECK_EQ(0u, initial_window_attributes_.size());
 
   DiscardXErrorsToIgnore(xev->xany.serial);
 
@@ -408,13 +476,7 @@ bool ForeignWindowManagerHostX11::Dispatch(const base::NativeEvent& event) {
       scoped_refptr<ForeignWindow> window(new ForeignWindow(params));
 
       // Create top level window widget.
-      ForeignWindowWidget::CreateWindow(window.get());
-
-      if (!window->IsManaged()) {
-        views::Widget* widget = window->GetWidget();
-        DCHECK(widget);
-        widget->SetBounds(bounds);
-      }
+      ForeignWindowWidget::CreateWindowWithBounds(window, bounds);
 
       // Add foreign window to map.
       foreign_windows_[event->xcreatewindow.window] = window.get();
@@ -463,6 +525,8 @@ bool ForeignWindowManagerHostX11::Dispatch(const base::NativeEvent& event) {
 
         views::Widget* widget = window->GetWidget();
         DCHECK(widget);
+        DCHECK(widget->non_client_view());
+        DCHECK(widget->client_view());
 
         gfx::Rect bounds(widget->client_view()->GetBoundsInScreen());
 

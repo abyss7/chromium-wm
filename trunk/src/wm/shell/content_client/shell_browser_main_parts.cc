@@ -131,6 +131,8 @@ void ShellBrowserMainParts::PreMainMessageLoopRun() {
   ForeignWindowManager::GetInstance()->CreateContainers(
       ash::Shell::GetPrimaryRootWindow());
 
+  ForeignWindowManager::GetInstance()->ShowForeignWindows();
+
   ash::Shell::GetPrimaryRootWindow()->ShowRootWindow();
 
   ForeignTestWindow::CreateParams params;
