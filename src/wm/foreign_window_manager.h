@@ -57,6 +57,9 @@ class ForeignWindowManager {
   // Create containers used for unmanaged windows.
   void CreateContainers(aura::RootWindow* root_window);
 
+  // Create widgets for foreign windows.
+  void ShowForeignWindows();
+
  private:
   ForeignWindowManager();
   virtual ~ForeignWindowManager();

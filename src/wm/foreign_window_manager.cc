@@ -125,4 +125,9 @@ void ForeignWindowManager::CreateContainers(aura::RootWindow* root_window) {
   container->Show();
 }
 
+void ForeignWindowManager::ShowForeignWindows() {
+  DCHECK(initialized_);
+  host_->ShowForeignWindows();
+}
+
 }  // namespace wm

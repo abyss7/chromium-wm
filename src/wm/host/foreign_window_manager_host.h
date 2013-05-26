@@ -29,6 +29,8 @@ class ForeignWindowManagerHost {
 
   virtual void SetDefaultCursor(gfx::NativeCursor cursor) = 0;
 
+  virtual void ShowForeignWindows() = 0;
+
   // Creates a new ForeignWindowManagerHost. The caller owns the returned
   // value.
   static ForeignWindowManagerHost* Create();

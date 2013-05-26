@@ -12,7 +12,9 @@ class ForeignWindow;
 
 class ForeignWindowWidget : public views::Widget {
  public:
-  static views::Widget* CreateWindow(ForeignWindow* foreign_window);
+  static views::Widget* CreateWindowWithBounds(
+      ForeignWindow* foreign_window,
+      const gfx::Rect& bounds);
 
   virtual void Close() OVERRIDE;
 
