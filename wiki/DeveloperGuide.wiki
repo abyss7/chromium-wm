@@ -9,48 +9,38 @@ This page details the preferred way to work on Chromium WM.
 
 = Prerequisites =
 
-  * Committers will need an SVN account.
+  * Follow Chromium's [https://code.google.com/p/chromium/wiki/UsingGit UsingGit] instructions to get a git checkout of the Chromium code.
 
-  * [http://dev.chromium.org/developers/how-tos/install-depot-tools depot_tools] is required on every platform, make sure it's correctly in your PATH.
-
-= Initial checkout =
-
-First, have gclient create its configuration file.
+= Checkout the chromium-wm code =
 
 {{{
-  gclient config https://chromium-wm.googlecode.com/svn/trunk/src
+  cd src
+  git add remote experimental https://chromium.googlesource.com/experimental/chromium/src.git
+  git config --add remote.experimental.fetch '+refs/wip/chromium-wm:refs/remotes/experimental/chromium-wm'
+  git fetch experimental
 }}}
 
-Optional: Edit the {{{.gclient}}} file that was created, and add lines to exclude unneeded tests in order to syncing faster. This is described in [http://dev.chromium.org/developers/how-tos/get-the-code#TOC-Reducing-the-size-of-your-checkout Reducing the size of your checkout].
-
-Now do a sync to create the src/ folder and get the source code.
+To create a local working branch:
 
 {{{
-  # First time only you must use '--nohooks' to pull only source code, then install dependencies.
-  gclient sync --nohooks
-  src/build/install-build-deps.sh
-  gclient sync
+  git branch mywork experimental/chromium-wm
 }}}
 
 = Building =
 
-This assumes you are building on Linux, and have a machine set up to build chromium already. If not, then see [https://code.google.com/p/chromium/wiki/LinuxBuildInstructionsPrerequisites Prerequisites] and [https://code.google.com/p/chromium/wiki/LinuxBuildInstructions First Time Build Bootstrap] in the Chromium Wiki.
-
-=== Using clang ===
-
-If you want to use clang as your compiler, then run {{{./src/tools/clang/scripts/update.sh}}} to fetch the required pieces for it, and add {{{clang=1}}} to your {{{GYP_DEFINES}}} environment variable when running {{{gclient sync}}} or {{{gclient runhooks}}} as described in [https://code.google.com/p/chromium/wiki/Clang the Chromium clang instructions].
-
+Configure Chromium to build with wm functionality:
 {{{
-  ./src/tools/clang/scripts/update.sh
-  export GYP_DEFINES="clang=1"
+  ./build/gyp_chromium -Dchromeos=1 -Duse_ash=1 -Duse_wm=1
+  # chromeos=1 is needed until ash is better supported outside chromeos
 }}}
+
+Building this project is essentially the same as building the Chromium project, so more details can be found in [https://code.google.com/p/chromium/wiki/LinuxBuildInstructions the Chromium wiki].
 
 == Building wm_shell ==
 
 This builds a test shell that demonstrates the various window manager functionality for debugging.
 
 {{{
-  gclient runhooks  # This is needed if you change any .gyp(i) files.
   ninja -C out/Debug wm_shell
   # The resulting binary is found in out/Debug
 }}}
@@ -60,14 +50,9 @@ This builds a test shell that demonstrates the various window manager functional
 This builds all window manager unit tests.
 
 {{{
-  gclient runhooks  # This is needed if you change any .gyp(i) files.
   ninja -C out/Debug wm_unittests
   # The resulting binary is found in out/Debug
 }}}
-
-== Further reading ==
-
-Building this project is essentially the same as building the Chromium project, so more details can be found in [https://code.google.com/p/chromium/wiki/LinuxBuildInstructions the Chromium wiki].
 
 = Linking errors =
 
