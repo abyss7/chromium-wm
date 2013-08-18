@@ -15,7 +15,7 @@ This page details the preferred way to work on Chromium WM.
 
 {{{
   cd src
-  git add remote experimental https://chromium.googlesource.com/experimental/chromium/src.git
+  git remote add experimental https://chromium.googlesource.com/experimental/chromium/src.git
   git config --add remote.experimental.fetch '+refs/wip/chromium-wm:refs/remotes/experimental/chromium-wm'
   git fetch experimental
 }}}
