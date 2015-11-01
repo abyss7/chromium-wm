@@ -1,0 +1,1 @@
+Chromium WM is a native window manager built on top of the window management framework used by Google Chrome OS.
